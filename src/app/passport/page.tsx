@@ -236,7 +236,7 @@ function FreshnessPassportContent() {
                     {/* Treatment steps */}
                     {batch.treatments.map((treatment: any) => {
                       const TIcon =
-                        journeyStepIcons[treatment.type] || CheckCircle2;
+                        journeyStepIcons[treatment.type as TreatmentType] || CheckCircle2;
                       return (
                         <div key={treatment.id} className="flex gap-4 relative">
                           <div className="w-9 h-9 rounded-full bg-biofresh-100 border-2 border-biofresh-400 flex items-center justify-center z-10 shrink-0">
