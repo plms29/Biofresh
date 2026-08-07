@@ -100,11 +100,10 @@ export default function QualityVisionPage() {
           </div>
           <div>
             <h1 className="text-xl md:text-2xl font-bold">
-              AI Crop Quality Vision
+              Computer Vision Diagnostics
             </h1>
             <p className="text-sm text-muted-foreground">
-              Kiểm tra chất lượng bằng AI — Đếm trái, đo kích thước, phát hiện
-              bệnh
+              AI-powered quality assessment — Count, sizing, and defect detection
             </p>
           </div>
         </div>
@@ -121,7 +120,7 @@ export default function QualityVisionPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <Upload className="w-4 h-4 text-biofresh-500" />
-                Tải ảnh kiểm tra
+                Upload Inspection Image
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -153,10 +152,10 @@ export default function QualityVisionPage() {
                     <ImageIcon className="w-8 h-8 text-biofresh-500" />
                   </motion.div>
                   <p className="text-sm font-medium text-center mb-1">
-                    Kéo thả ảnh thùng trái cây vào đây
+                    Click to upload or drag & drop
                   </p>
                   <p className="text-xs text-muted-foreground text-center">
-                    hoặc click để chọn file (JPG, PNG, WebP)
+                    JPG, PNG, WebP (max 5MB)
                   </p>
                   <Button
                     variant="outline"
@@ -164,7 +163,7 @@ export default function QualityVisionPage() {
                     className="mt-4 gap-2 rounded-xl border-biofresh-300 text-biofresh-700"
                   >
                     <Camera className="w-4 h-4" />
-                    Chụp ảnh
+                    Take a Photo
                   </Button>
                   <input
                     ref={fileInputRef}
@@ -224,7 +223,7 @@ export default function QualityVisionPage() {
                         className="gap-2 bg-biofresh-500 hover:bg-biofresh-600 rounded-xl shadow-lg px-8"
                       >
                         <Sparkles className="w-5 h-5" />
-                        Bắt đầu quét AI
+                        Start AI Scan
                       </Button>
                     </div>
                   )}
@@ -243,7 +242,7 @@ export default function QualityVisionPage() {
                         >
                           <Sparkles className="w-4 h-4" />
                         </motion.div>
-                        Đang quét...
+                        Scanning produce...
                       </div>
                     </div>
                   )}
@@ -274,8 +273,8 @@ export default function QualityVisionPage() {
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {isScanning
-                      ? "Đang phân tích ảnh..."
-                      : "Tải ảnh và bấm quét để xem kết quả"}
+                      ? "Analyzing image..."
+                      : "Upload an image and start scanning to view results"}
                   </p>
                   {isScanning && (
                     <div className="mt-4 w-48">
@@ -301,7 +300,7 @@ export default function QualityVisionPage() {
                   {/* Confidence */}
                   <div className="flex items-center justify-between p-3 bg-biofresh-50 rounded-xl">
                     <span className="text-xs text-muted-foreground">
-                      Độ tin cậy AI
+                      AI Confidence
                     </span>
                     <span className="text-sm font-bold text-biofresh-700">
                       {result.confidence}%
@@ -313,14 +312,14 @@ export default function QualityVisionPage() {
                     <div className="flex items-center justify-center gap-2 mb-1">
                       <Package className="w-5 h-5 text-biofresh-600" />
                       <span className="text-xs text-muted-foreground">
-                        Số trái phát hiện
-                      </span>
-                    </div>
-                    <p className="text-4xl font-bold text-biofresh-700">
-                      {result.fruitCount}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      trái dâu tây
+                      Detected Fruits Count
+                    </span>
+                  </div>
+                  <p className="text-4xl font-bold text-biofresh-700">
+                    {result.fruitCount}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    strawberries
                     </p>
                   </div>
 
@@ -329,13 +328,13 @@ export default function QualityVisionPage() {
                     <div className="flex items-center gap-1.5 mb-3">
                       <Ruler className="w-3.5 h-3.5 text-muted-foreground" />
                       <span className="text-xs font-semibold">
-                        Phân bố kích thước
+                        Size Distribution
                       </span>
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center gap-3">
                         <span className="text-xs text-muted-foreground w-12">
-                          Nhỏ
+                          Small
                         </span>
                         <div className="flex-1">
                           <Progress
@@ -349,7 +348,7 @@ export default function QualityVisionPage() {
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-xs text-muted-foreground w-12">
-                          Vừa
+                          Medium
                         </span>
                         <div className="flex-1">
                           <Progress
@@ -363,7 +362,7 @@ export default function QualityVisionPage() {
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-xs text-muted-foreground w-12">
-                          Lớn
+                          Large
                         </span>
                         <div className="flex-1">
                           <Progress
@@ -381,7 +380,7 @@ export default function QualityVisionPage() {
                   {/* Overall Grade */}
                   <div className="flex items-center justify-between p-3 bg-cream rounded-xl">
                     <span className="text-xs font-semibold">
-                      Phân loại chất lượng
+                      Quality Grade
                     </span>
                     <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-sm font-bold px-4">
                       Grade {result.overallGrade}
@@ -394,7 +393,7 @@ export default function QualityVisionPage() {
                       <div className="flex items-center gap-1.5 mb-2">
                         <Bug className="w-3.5 h-3.5 text-orange-500" />
                         <span className="text-xs font-semibold text-orange-700">
-                          Vấn đề phát hiện ({result.qualityIssues.length})
+                          Detected Issues ({result.qualityIssues.length})
                         </span>
                       </div>
                       <div className="space-y-1.5">
@@ -416,7 +415,7 @@ export default function QualityVisionPage() {
                   {/* Action */}
                   <Button className="w-full gap-2 bg-biofresh-500 hover:bg-biofresh-600 rounded-xl h-11">
                     <CheckCircle2 className="w-4 h-4" />
-                    Thêm vào lô hàng DBI
+                    Save to Batch Identity
                   </Button>
                 </motion.div>
               )}

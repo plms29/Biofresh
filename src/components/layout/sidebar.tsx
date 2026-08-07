@@ -20,33 +20,33 @@ import Image from "next/image";
 const navItems = [
   {
     href: "/",
-    label: "Trang chủ",
+    label: "Dashboard",
     icon: LayoutDashboard,
-    description: "Dashboard",
+    description: "Overview & Analytics",
   },
   {
     href: "/batches",
-    label: "Quản lý lô hàng",
+    label: "Batch Traceability",
     icon: Package,
     description: "Digital Batch Identity",
   },
   {
     href: "/ai-engine",
-    label: "Phân tích AI",
+    label: "Decision Engine",
     icon: Brain,
-    description: "Decision Engine",
+    description: "Decision Intelligence Engine",
   },
   {
     href: "/quality-vision",
-    label: "Kiểm tra chất lượng",
-    icon: Camera,
-    description: "Quality Vision",
+    label: "Computer Vision Diagnostics",
+    icon: ScanLine,
+    description: "AI Crop Quality Vision",
   },
   {
     href: "/passport",
-    label: "Freshness Passport",
-    icon: FileCheck,
-    description: "Truy xuất nguồn gốc",
+    label: "Phytosanitary Passport",
+    icon: BadgeCheck,
+    description: "Quality Assurance Certificate",
   },
 ];
 

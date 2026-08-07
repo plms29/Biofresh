@@ -9,7 +9,7 @@ export const mockBatches: Batch[] = [
   {
     id: "BF-2026-0801",
     fruitType: "strawberry",
-    fruitLabel: "Dâu tây Đà Lạt",
+    fruitLabel: "Dalat Strawberry",
     variety: "Mùa hè Nhật Bản (Kaorino)",
     weightKg: 40,
     harvestDate: "2026-08-01",
@@ -24,7 +24,7 @@ export const mockBatches: Batch[] = [
       {
         id: "t1",
         type: "quality_check",
-        label: "Kiểm tra chất lượng ban đầu",
+        label: "Initial Quality Assessment",
         description: "Kiểm tra độ chín, phân loại kích thước và phát hiện hư hỏng",
         timestamp: "2026-08-01T06:30:00",
         notes: "78% đạt tiêu chuẩn Grade B trở lên",
@@ -32,7 +32,7 @@ export const mockBatches: Batch[] = [
       {
         id: "t2",
         type: "chitosan_spray",
-        label: "Phun Chitosan bảo quản",
+        label: "Chitosan Coating",
         description: "Phun dung dịch Chitosan 1.5% tạo màng bảo vệ tự nhiên",
         timestamp: "2026-08-01T08:00:00",
         notes: "Chitosan chiết xuất từ vỏ tôm organic",
@@ -40,7 +40,7 @@ export const mockBatches: Batch[] = [
       {
         id: "t3",
         type: "cold_storage",
-        label: "Đưa vào kho lạnh",
+        label: "Cold Storage Transfer",
         description: "Bảo quản ở nhiệt độ 2-4°C, độ ẩm 90-95%",
         timestamp: "2026-08-01T10:00:00",
         temperature: 3,
@@ -62,7 +62,7 @@ export const mockBatches: Batch[] = [
   {
     id: "BF-2026-0802",
     fruitType: "strawberry",
-    fruitLabel: "Dâu tây Đà Lạt",
+    fruitLabel: "Dalat Strawberry",
     variety: "Hàn Quốc (Seolhyang)",
     weightKg: 65,
     harvestDate: "2026-07-28",
@@ -77,7 +77,7 @@ export const mockBatches: Batch[] = [
       {
         id: "t4",
         type: "quality_check",
-        label: "Kiểm tra chất lượng",
+        label: "Quality Check",
         description: "Phân loại kích thước và kiểm tra hình thức",
         timestamp: "2026-07-28T07:00:00",
         notes: "92% đạt Grade A",
@@ -85,14 +85,14 @@ export const mockBatches: Batch[] = [
       {
         id: "t5",
         type: "chitosan_spray",
-        label: "Xử lý Chitosan",
+        label: "Chitosan Treatment",
         description: "Chitosan coating 2%",
         timestamp: "2026-07-28T09:00:00",
       },
       {
         id: "t6",
         type: "cold_storage",
-        label: "Bảo quản lạnh",
+        label: "Cold Storage",
         description: "Kho lạnh 2°C",
         timestamp: "2026-07-28T11:00:00",
         temperature: 2,
@@ -121,7 +121,7 @@ export const mockBatches: Batch[] = [
   {
     id: "BF-2026-0803",
     fruitType: "dragon_fruit",
-    fruitLabel: "Thanh long Bình Thuận",
+    fruitLabel: "Red Dragon Fruit",
     variety: "Ruột đỏ H14",
     weightKg: 200,
     harvestDate: "2026-07-25",
@@ -164,7 +164,7 @@ export const mockBatches: Batch[] = [
   {
     id: "BF-2026-0804",
     fruitType: "mango",
-    fruitLabel: "Xoài Cát Chu",
+    fruitLabel: "Hoa Loc Mango",
     variety: "Cát Chu Đồng Tháp",
     weightKg: 150,
     harvestDate: "2026-07-20",
@@ -216,7 +216,7 @@ export const mockBatches: Batch[] = [
   {
     id: "BF-2026-0805",
     fruitType: "avocado",
-    fruitLabel: "Bơ Booth",
+    fruitLabel: "Dak Lak Avocado",
     variety: "Booth 7 Đắk Lắk",
     weightKg: 120,
     harvestDate: "2026-08-03",
@@ -327,7 +327,7 @@ export const mockBatches: Batch[] = [
       {
         id: "t18",
         type: "quality_check",
-        label: "Kiểm tra chất lượng",
+        label: "Quality Check",
         description: "Đo Brix (>13%), kiểm tra vỏ nhăn/nứt",
         timestamp: "2026-08-05T06:30:00",
         notes: "Brix trung bình 15.2%, chất lượng tốt",

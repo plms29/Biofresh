@@ -3,9 +3,9 @@ import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-const SYSTEM_INSTRUCTION = `Bạn là BioFresh Decision Engine - AI Phân tích dữ liệu nông sản sau thu hoạch.
-Nhiệm vụ của bạn là nhận dữ liệu của một lô hàng nông sản, sau đó đưa ra 3 phương án xử lý (scenario) để tối ưu hoá lợi nhuận và giảm thiểu rủi ro cho người nông dân/HTX.
-Hãy trả về ĐÚNG ĐỊNH DẠNG JSON THEO YÊU CẦU, KHÔNG THÊM BẤT KỲ TEXT NÀO KHÁC BÊN NGOÀI JSON.`;
+const SYSTEM_INSTRUCTION = `You are the BioFresh Decision Engine - a Post-Harvest Data Analysis AI.
+Your task is to receive data for an agricultural produce batch and provide 3 scenarios to optimize profits and minimize risks for farmers/cooperatives.
+You must return STRICTLY FORMATTED JSON, WITHOUT ANY ADDITIONAL TEXT OUTSIDE THE JSON.`;
 
 // Define the expected output schema structure directly in the prompt for simplicity,
 // or use structured outputs if supported by the SDK configuration.
@@ -21,28 +21,28 @@ export async function POST(req: Request) {
 
     const { batchData } = await req.json();
     
-    const prompt = `Phân tích lô hàng sau và trả về 3 phương án (AIScenario) bằng JSON.
-Dữ liệu lô hàng:
+    const prompt = `Analyze the following batch and return 3 scenarios (AIScenario) in JSON.
+Batch Data:
 ${JSON.stringify(batchData, null, 2)}
 
-Yêu cầu định dạng JSON (là một array chứa 3 object):
+JSON Format Requirement (must be an array containing 3 objects):
 [
   {
     "id": "scenario_1",
-    "title": "Tên phương án (ngắn gọn)",
-    "description": "Mô tả chi tiết",
+    "title": "Scenario Name (short)",
+    "description": "Detailed description",
     "profitLevel": "low" | "medium" | "high" | "very_high",
-    "profitLabel": "Nhãn hiển thị (VD: Lợi nhuận cao)",
+    "profitLabel": "Display label (e.g., High Profit)",
     "riskLevel": "low" | "medium" | "high",
-    "riskLabel": "Nhãn rủi ro (VD: Rủi ro thấp)",
+    "riskLabel": "Risk label (e.g., Low Risk)",
     "estimatedProfit": 15000000,
-    "timeline": "Thời gian hoàn thành (VD: 2-3 ngày)",
-    "requirements": ["Yêu cầu 1", "Yêu cầu 2"],
-    "isRecommended": true/false (chỉ 1 phương án là true),
-    "mascotComment": "Lời khuyên từ BioFresh Guide bằng tiếng Việt thân thiện, dùng emoji"
+    "timeline": "Timeframe (e.g., 2-3 days)",
+    "requirements": ["Requirement 1", "Requirement 2"],
+    "isRecommended": true/false (only 1 scenario can be true),
+    "mascotComment": "Advice from BioFresh Guide in professional English, use emojis"
   }
 ]
-CHỈ TRẢ VỀ JSON, KHÔNG CÓ MARKDOWN HOẶC BACKTICKS.`;
+RETURN ONLY JSON, NO MARKDOWN OR BACKTICKS.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",

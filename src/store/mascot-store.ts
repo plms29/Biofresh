@@ -27,12 +27,12 @@ interface MascotState {
 }
 
 const defaultResponses = [
-  "Mình sẽ phân tích dữ liệu lô hàng cho bạn ngay! Hãy chờ chút nha~ 🌿",
-  "Dựa trên dữ liệu thị trường hiện tại, mình khuyên bạn nên ưu tiên chế biến sản phẩm giá trị gia tăng nhé!",
-  "Nhiệt độ kho lạnh đang ổn định ở 3°C — rất tốt cho bảo quản dâu tây! ❄️",
-  "Bạn có muốn mình tạo Freshness Passport cho lô hàng này không? Siêu thị rất thích sản phẩm có truy xuất nguồn gốc! 📋",
-  "Mẹo nhỏ: Thu hoạch dâu tây vào sáng sớm (5-7h) khi sương chưa tan sẽ giữ được độ tươi tốt nhất! 🌅",
-  "Giá thanh long ruột đỏ đang tăng 20% tại thị trường Nhật. Đây là cơ hội tốt để xuất khẩu nha! 🇯🇵",
+  "Analyzing batch parameters... please wait a moment! 🌿",
+  "I detected Botrytis cinerea risk based on recent humidity data. Recommend Chitosan coating treatment immediately. 🛡️",
+  "Temperature in the cold storage is stable at 3°C — optimal for strawberry preservation! ❄️",
+  "Would you like me to generate a Quality Assurance Passport for this batch? B2B partners require strict traceability! 📋",
+  "Pro-tip: Harvesting strawberries in the early morning (5-7 AM) while dew remains ensures peak freshness! 🌅",
+  "Red dragon fruit prices have surged 20% in the Japanese market. This is a great window for export! 🇯🇵",
 ];
 
 export const useMascotStore = create<MascotState>((set, get) => ({
@@ -83,7 +83,7 @@ export const useMascotStore = create<MascotState>((set, get) => ({
       const assistantMsg: ChatMessage = {
         id: `msg-${Date.now()}`,
         role: "assistant",
-        content: data.text || "Xin lỗi, mình đang gặp chút sự cố kết nối. 🌿",
+        content: data.text || "Analyzing batch parameters... please wait a moment! 🌿",
         timestamp: new Date().toISOString(),
       };
 
@@ -96,7 +96,7 @@ export const useMascotStore = create<MascotState>((set, get) => ({
       const errorMsg: ChatMessage = {
         id: `msg-${Date.now()}`,
         role: "assistant",
-        content: "Oops! Không thể kết nối với BioFresh Engine lúc này (Hãy kiểm tra GEMINI_API_KEY). 😢",
+        content: "Oops! Cannot connect to the BioFresh Engine right now. 😢",
         timestamp: new Date().toISOString(),
       };
       set((state) => ({

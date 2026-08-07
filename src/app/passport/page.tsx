@@ -69,10 +69,10 @@ function FreshnessPassportContent() {
           </div>
           <div>
             <h1 className="text-xl md:text-2xl font-bold">
-              Freshness Passport
+              Quality Assurance Passport
             </h1>
             <p className="text-sm text-muted-foreground">
-              Hồ sơ truy xuất nguồn gốc — Chia sẻ với đối tác B2B
+              Traceability record — Share with B2B partners
             </p>
           </div>
         </div>
@@ -155,7 +155,7 @@ function FreshnessPassportContent() {
                   <div className="flex items-center gap-1.5 mb-1">
                     <Sprout className="w-3.5 h-3.5 text-biofresh-600" />
                     <span className="text-[10px] text-muted-foreground">
-                      Nông trại
+                      Origin Farm
                     </span>
                   </div>
                   <p className="text-xs font-semibold">{batch.farmName}</p>
@@ -184,14 +184,14 @@ function FreshnessPassportContent() {
                   <div className="flex items-center gap-1.5 mb-1">
                     <Award className="w-3.5 h-3.5 text-biofresh-600" />
                     <span className="text-[10px] text-muted-foreground">
-                      Phân loại
+                      Quality Grade
                     </span>
                   </div>
                   <Badge
                     variant="outline"
                     className={`text-xs ${getGradeColor(batch.grade)}`}
                   >
-                    Grade {batch.grade}
+                    Loại {batch.grade}
                   </Badge>
                 </div>
               </div>
@@ -218,7 +218,7 @@ function FreshnessPassportContent() {
                       <div className="flex-1 p-3 bg-biofresh-50 rounded-xl border border-biofresh-100">
                         <div className="flex items-center justify-between">
                           <h4 className="text-xs font-semibold text-biofresh-800">
-                            Thu hoạch
+                            Harvest Date
                           </h4>
                           <span className="text-[10px] text-muted-foreground">
                             {formatDate(batch.harvestDate)}
@@ -228,13 +228,13 @@ function FreshnessPassportContent() {
                           {batch.farmName}, {batch.location}
                         </p>
                         <p className="text-[10px] text-biofresh-600 mt-0.5">
-                          Thời tiết: {batch.harvestWeather}
+                          Weather: {batch.harvestWeather}
                         </p>
                       </div>
                     </div>
 
                     {/* Treatment steps */}
-                    {batch.treatments.map((treatment) => {
+                    {batch.treatments.map((treatment: any) => {
                       const TIcon =
                         journeyStepIcons[treatment.type] || CheckCircle2;
                       return (
@@ -273,13 +273,13 @@ function FreshnessPassportContent() {
               <div>
                 <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
                   <Award className="w-4 h-4 text-amber-500" />
-                  Chứng nhận & Tiêu chuẩn
+                  Certifications & Standards
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {[
                     "VietGAP",
                     "Chitosan Organic",
-                    "Truy xuất nguồn gốc",
+                    "Traceability Verified",
                     "BioFresh Verified",
                   ].map((cert) => (
                     <Badge
@@ -302,9 +302,7 @@ function FreshnessPassportContent() {
                 <div className="w-32 h-32 bg-biofresh-50 rounded-xl border-2 border-dashed border-biofresh-300 flex flex-col items-center justify-center shrink-0">
                   <QrCode className="w-12 h-12 text-biofresh-400 mb-1" />
                   <p className="text-[9px] text-muted-foreground text-center">
-                    Scan để xem
-                    <br />
-                    chi tiết
+                    Scan to view digital record
                   </p>
                 </div>
 
@@ -312,7 +310,7 @@ function FreshnessPassportContent() {
                   <div className="inline-flex items-center gap-4 p-4 bg-gradient-to-r from-biofresh-50 to-emerald-50 rounded-xl">
                     <div>
                       <p className="text-[10px] text-muted-foreground mb-0.5">
-                        Điểm chất lượng tổng thể
+                        Overall Quality Score
                       </p>
                       <p className="text-4xl font-bold text-biofresh-600">
                         {batch.qualityMetrics.overallScore}

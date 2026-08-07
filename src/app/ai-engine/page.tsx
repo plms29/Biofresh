@@ -117,7 +117,7 @@ function AIEngineContent() {
               Decision Intelligence Engine
             </h1>
             <p className="text-sm text-muted-foreground">
-              Phân tích AI — Tối ưu hóa quyết định sau thu hoạch
+              AI-driven optimization for post-harvest strategies
             </p>
           </div>
         </div>
@@ -160,7 +160,9 @@ function AIEngineContent() {
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl">{fruit.emoji}</span>
+                        <div className="w-10 h-10 rounded-xl bg-biofresh-100/50 flex items-center justify-center shrink-0">
+                          <span className="text-2xl leading-none">{fruit.emoji}</span>
+                        </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-semibold truncate">
                             {batch.fruitLabel}
@@ -205,7 +207,7 @@ function AIEngineContent() {
                   className="gap-2 bg-biofresh-500 hover:bg-biofresh-600 rounded-xl px-8 h-12"
                 >
                   <Zap className="w-5 h-5" />
-                  Phân tích bằng AI
+                  Execute AI Analysis
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               </motion.div>
@@ -256,11 +258,10 @@ function AIEngineContent() {
                   </motion.div>
 
                   <h3 className="text-lg font-bold mb-1">
-                    Đang phân tích...
+                    Analyzing...
                   </h3>
                   <p className="text-sm text-muted-foreground mb-6">
-                    BioFresh Guide đang đánh giá phương án tối ưu cho lô hàng
-                    của bạn
+                    BioFresh Guide is evaluating the optimal strategy for your batch
                   </p>
 
                   {/* Progress steps */}
@@ -334,8 +335,8 @@ function AIEngineContent() {
               <span className="w-6 h-6 rounded-full bg-biofresh-500 text-white text-xs flex items-center justify-center">
                 2
               </span>
-              <h2 className="text-sm font-semibold">
-                Phương án đề xuất ({scenarios.length} lựa chọn)
+              <h2 className="text-lg font-semibold mb-3">
+                3. Recommended Scenarios
               </h2>
             </div>
 
@@ -362,7 +363,7 @@ function AIEngineContent() {
                       <div className="absolute top-0 right-0">
                         <div className="biofresh-gradient text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl flex items-center gap-1">
                           <Star className="w-3 h-3 fill-yellow-300 text-yellow-300" />
-                          ĐỀ XUẤT
+                          RECOMMENDED
                         </div>
                       </div>
                     )}
@@ -385,7 +386,7 @@ function AIEngineContent() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <TrendingUp className="w-3.5 h-3.5" />
-                            Lợi nhuận
+                            Profit
                           </div>
                           <Badge
                             className={`text-[10px] ${getProfitColor(
@@ -399,7 +400,7 @@ function AIEngineContent() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <ShieldAlert className="w-3.5 h-3.5" />
-                            Rủi ro
+                            Risk
                           </div>
                           <Badge
                             className={`text-[10px] ${getRiskColor(
@@ -413,7 +414,7 @@ function AIEngineContent() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Clock className="w-3.5 h-3.5" />
-                            Thời gian
+                            Timeframe
                           </div>
                           <span className="text-xs font-medium">
                             {scenario.timeline}
@@ -421,8 +422,8 @@ function AIEngineContent() {
                         </div>
 
                         <div className="p-2.5 bg-biofresh-50 rounded-lg">
-                          <p className="text-[10px] text-muted-foreground mb-0.5">
-                            Lợi nhuận ước tính
+                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                            Profit Margin
                           </p>
                           <p className="text-lg font-bold text-biofresh-700">
                             {formatVND(scenario.estimatedProfit)}
@@ -435,7 +436,7 @@ function AIEngineContent() {
                         <div className="flex items-center gap-1 mb-2">
                           <ListChecks className="w-3 h-3 text-muted-foreground" />
                           <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                            Yêu cầu
+                            Requirements
                           </span>
                         </div>
                         <ul className="space-y-1">
@@ -466,7 +467,7 @@ function AIEngineContent() {
                         }}
                       >
                         <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
-                        Chọn phương án này
+                        Select this strategy
                       </Button>
                     </CardContent>
                   </Card>

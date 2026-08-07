@@ -200,7 +200,7 @@ export default function BatchDetailPage({
             </div>
             <div className="min-w-0">
               <p className="text-[10px] text-muted-foreground">
-                Thời tiết thu hoạch
+                Harvest Weather
               </p>
               <p className="text-xs font-medium truncate">
                 {batch.harvestWeather}
@@ -214,7 +214,7 @@ export default function BatchDetailPage({
               <MapPin className="w-4 h-4 text-rose-600" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] text-muted-foreground">Vị trí</p>
+              <p className="text-[10px] text-muted-foreground">Location</p>
               <p className="text-xs font-medium truncate">{batch.location}</p>
               <p className="text-[10px] text-muted-foreground truncate">
                 {batch.farmName}
@@ -231,7 +231,7 @@ export default function BatchDetailPage({
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-biofresh-500" />
-                Chỉ số chất lượng
+                Quality Metrics
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -241,7 +241,7 @@ export default function BatchDetailPage({
                   {batch.qualityMetrics.overallScore}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Điểm tổng thể / 100
+                  Overall Score / 100
                 </p>
               </div>
 
@@ -262,18 +262,18 @@ export default function BatchDetailPage({
               {batch.qualityMetrics.botrytisDetected && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
                   <p className="text-xs font-medium text-red-700">
-                    ⚠️ Phát hiện nấm Botrytis cinerea
+                    ⚠️ Botrytis cinerea detected
                   </p>
                   <p className="text-[10px] text-red-600 mt-0.5">
-                    Cần xử lý khẩn cấp — loại bỏ trái nhiễm và cách ly lô hàng
+                    Urgent action required — remove infected fruits and isolate the batch
                   </p>
                 </div>
               )}
 
               <div className="flex items-center justify-between text-xs p-3 bg-cream rounded-xl">
-                <span className="text-muted-foreground">Trái lỗi phát hiện</span>
+                <span className="text-muted-foreground">Defective fruits detected</span>
                 <span className="font-semibold">
-                  {batch.qualityMetrics.defectCount} trái
+                  {batch.qualityMetrics.defectCount} fruits
                 </span>
               </div>
             </CardContent>
@@ -286,7 +286,7 @@ export default function BatchDetailPage({
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <FlaskConical className="w-4 h-4 text-biofresh-500" />
-                Lịch sử xử lý bảo quản
+                Treatment Timeline
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -385,15 +385,15 @@ export default function BatchDetailPage({
               <div className="flex items-center gap-1.5 mb-1">
                 <Brain className="w-3.5 h-3.5 text-biofresh-600" />
                 <span className="text-xs font-semibold text-biofresh-700">
-                  Gợi ý từ BioFresh Guide
+                  Decision Intelligence Assistant
                 </span>
               </div>
               <p className="text-sm text-biofresh-800 leading-relaxed">
                 {batch.fruitType === "strawberry" && batch.grade !== "A"
-                  ? `Lô ${batch.fruitLabel} ${batch.weightKg}kg này nên đưa vào kho lạnh chờ gom đủ 200kg để sấy thăng hoa, biên lợi nhuận sẽ tăng 100% thay vì bán tươi lúc dội chợ! 🌟`
+                  ? `This ${batch.weightKg}kg ${batch.fruitLabel} batch should be moved to cold storage until reaching 200kg for freeze-drying. Profit margins will increase by 100% compared to fresh market sales! 🌟`
                   : batch.qualityMetrics.botrytisDetected
-                  ? `⚠️ Lô hàng này có dấu hiệu nấm Botrytis. Cần loại bỏ trái nhiễm ngay và xử lý Chitosan nồng độ cao cho phần còn lại. Nên bán gấp hoặc chế biến để tránh hao hụt thêm.`
-                  : `Lô ${batch.fruitLabel} chất lượng ${batch.grade} này đang ở trạng thái tốt! Mình khuyên bạn nên xem phân tích AI để chọn phương án tối ưu nhất nhé. 💚`}
+                  ? `⚠️ Botrytis infection detected in this batch. Immediate action required: remove infected fruit and apply high-concentration Chitosan treatment. Recommend rapid dispatch to prevent further losses.`
+                  : `This Grade ${batch.grade} ${batch.fruitLabel} batch is in optimal condition! I recommend reviewing the AI diagnostics to determine the most profitable distribution strategy. 💚`}
               </p>
               <Button
                 asChild

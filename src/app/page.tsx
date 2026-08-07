@@ -90,7 +90,7 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-2 mb-2">
                   <Sparkles className="w-4 h-4 text-yellow-300" />
                   <span className="text-white/80 text-xs font-medium uppercase tracking-wider">
-                    Continuous Learning Loop — Insight hôm nay
+                    Continuous Learning Loop — Today's Insight
                   </span>
                 </div>
                 <p className="text-white text-base md:text-lg font-medium leading-relaxed">
@@ -125,14 +125,14 @@ export default function DashboardPage() {
                 <Package className="w-5 h-5 text-biofresh-600" />
               </div>
               <Badge variant="secondary" className="text-[10px] bg-biofresh-50 text-biofresh-700">
-                +2 tuần này
+                +2 this week
               </Badge>
             </div>
             <p className="text-2xl md:text-3xl font-bold text-foreground">
               {metrics.activeBatches}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Lô hàng đang hoạt động
+            <p className="text-sm font-medium text-muted-foreground mb-1">
+              Active Batches
             </p>
           </CardContent>
         </Card>
@@ -152,7 +152,7 @@ export default function DashboardPage() {
               {metrics.spoilageSaved} <span className="text-base font-normal text-muted-foreground">kg</span>
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              Giảm hao hụt tháng này
+              Spoilage saved this month
             </p>
           </CardContent>
         </Card>
@@ -171,8 +171,8 @@ export default function DashboardPage() {
             <p className="text-xl md:text-2xl font-bold text-foreground">
               {formatVND(metrics.estimatedProfit)}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Lợi nhuận ước tính
+            <p className="text-sm font-medium text-muted-foreground mb-1">
+              Estimated Profit
             </p>
           </CardContent>
         </Card>
@@ -185,14 +185,14 @@ export default function DashboardPage() {
                 <AlertTriangle className="w-5 h-5 text-orange-500" />
               </div>
               <Badge className="text-[10px] bg-orange-500 text-white border-0">
-                Cần xử lý
+                Action Required
               </Badge>
             </div>
-            <p className="text-2xl md:text-3xl font-bold text-foreground">
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">
               {metrics.harvestAlerts}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Cảnh báo thu hoạch
+            </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              BioFresh OS — Smart Post-Harvest Management
             </p>
           </CardContent>
         </Card>
@@ -205,7 +205,7 @@ export default function DashboardPage() {
           <Card className="border-biofresh-100">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold">
-                Thao tác nhanh
+                Quick Actions
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -216,7 +216,7 @@ export default function DashboardPage() {
                 <Link href="/batches">
                   <QrCode className="w-5 h-5" />
                   <div className="text-left">
-                    <p className="text-sm font-medium">Tạo lô hàng mới</p>
+                    <p className="text-sm font-medium">Create New Batch</p>
                     <p className="text-[10px] text-white/70">Scan QR Code</p>
                   </div>
                 </Link>
@@ -229,9 +229,11 @@ export default function DashboardPage() {
                 <Link href="/ai-engine">
                   <Sparkles className="w-5 h-5" />
                   <div className="text-left">
-                    <p className="text-sm font-medium">Phân tích AI</p>
-                    <p className="text-[10px] text-muted-foreground">
-                      Decision Engine
+                    <p className="text-sm font-medium text-biofresh-900">
+                      Run AI Analysis
+                    </p>
+                    <p className="text-[10px] text-biofresh-700/70">
+                      Decision Intelligence
                     </p>
                   </div>
                 </Link>
@@ -244,9 +246,9 @@ export default function DashboardPage() {
                 <Link href="/quality-vision">
                   <ShieldCheck className="w-5 h-5" />
                   <div className="text-left">
-                    <p className="text-sm font-medium">Cập nhật bảo quản</p>
+                    <p className="text-sm font-medium">Update Storage</p>
                     <p className="text-[10px] text-muted-foreground">
-                      Kiểm tra chất lượng
+                      Quality Control
                     </p>
                   </div>
                 </Link>
@@ -258,7 +260,7 @@ export default function DashboardPage() {
           <Card className="border-biofresh-100">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold">
-                Xu hướng hao hụt (7 ngày)
+                Spoilage Trend (7 days)
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -278,7 +280,7 @@ export default function DashboardPage() {
                 ))}
               </div>
               <div className="flex justify-between mt-2">
-                {["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((d) => (
+                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
                   <span key={d} className="text-[9px] text-muted-foreground flex-1 text-center">
                     {d}
                   </span>
@@ -293,7 +295,7 @@ export default function DashboardPage() {
           <Card className="border-biofresh-100">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
               <CardTitle className="text-sm font-semibold">
-                Lô hàng gần đây
+                Recent Batches
               </CardTitle>
               <Button
                 asChild
@@ -302,7 +304,7 @@ export default function DashboardPage() {
                 className="text-xs text-biofresh-600 hover:text-biofresh-700 hover:bg-biofresh-50"
               >
                 <Link href="/batches">
-                  Xem tất cả
+                  View all
                   <ArrowRight className="w-3.5 h-3.5 ml-1" />
                 </Link>
               </Button>
@@ -311,12 +313,11 @@ export default function DashboardPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-xs">Mã lô</TableHead>
-                    <TableHead className="text-xs">Loại</TableHead>
-                    <TableHead className="text-xs hidden sm:table-cell">Ngày thu hoạch</TableHead>
-                    <TableHead className="text-xs">Khối lượng</TableHead>
-                    <TableHead className="text-xs hidden md:table-cell">Chất lượng</TableHead>
-                    <TableHead className="text-xs">Trạng thái</TableHead>
+                    <TableHead>Batch ID</TableHead>
+                    <TableHead>Produce Type</TableHead>
+                    <TableHead className="hidden md:table-cell">Origin</TableHead>
+                    <TableHead className="hidden md:table-cell">Quality</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

@@ -59,7 +59,7 @@ export function MascotWidget() {
                   alt="BioFresh Guide"
                   width={28}
                   height={28}
-                  className="rounded-full bg-white/20 p-0.5"
+                  className="rounded-full bg-white/20 p-0.5 object-contain"
                 />
                 <div>
                   <h3 className="text-white text-sm font-semibold">
@@ -88,14 +88,12 @@ export function MascotWidget() {
                     alt="Guide"
                     width={24}
                     height={24}
-                    className="shrink-0 mt-1"
+                    className="shrink-0 mt-1 object-contain"
                   />
                   <div className="bg-biofresh-50 rounded-2xl rounded-tl-sm px-3 py-2.5 text-sm text-biofresh-900">
-                    <p className="font-medium mb-1">Xin chào! 🌿</p>
+                    <p className="font-medium mb-1">Hello! 🌿</p>
                     <p className="text-xs text-biofresh-700 leading-relaxed">
-                      Mình là BioFresh Guide — trợ lý AI chuyên phân tích sau
-                      thu hoạch. Hỏi mình bất cứ điều gì về lô hàng, giá thị
-                      trường, hay cách bảo quản tốt nhất nhé!
+                      I am BioFresh Guide — your AI post-harvest diagnostics assistant. Ask me anything about your batches, market prices, or optimal storage conditions!
                     </p>
                   </div>
                 </div>
@@ -114,7 +112,7 @@ export function MascotWidget() {
                       alt="Guide"
                       width={24}
                       height={24}
-                      className="shrink-0 mt-1"
+                      className="shrink-0 mt-1 object-contain"
                     />
                   )}
                   <div
@@ -137,7 +135,7 @@ export function MascotWidget() {
                     alt="Guide"
                     width={24}
                     height={24}
-                    className="shrink-0 mt-1 animate-pulse"
+                    className="shrink-0 mt-1 animate-pulse object-contain"
                   />
                   <div className="bg-biofresh-50 rounded-2xl rounded-tl-sm px-4 py-3">
                     <div className="flex gap-1">
@@ -201,7 +199,7 @@ export function MascotWidget() {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Hỏi BioFresh Guide..."
+                placeholder="Ask about your batch..."
                 className="flex-1 text-sm px-3 py-2 rounded-xl bg-biofresh-50/50 border border-biofresh-200/50 focus:outline-none focus:ring-2 focus:ring-biofresh-400/30 focus:border-biofresh-400 placeholder:text-biofresh-400"
               />
               <Button

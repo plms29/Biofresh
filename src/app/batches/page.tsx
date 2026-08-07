@@ -86,10 +86,10 @@ export default function BatchesPage() {
       >
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-foreground">
-            Quản lý lô hàng
+            Batch Traceability
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Digital Batch Identity — Theo dõi toàn bộ vòng đời nông sản
+          <p className="text-sm text-muted-foreground mt-1">
+            Digital Batch Identity — End-to-end post-harvest tracking
           </p>
         </div>
         <div className="flex items-center gap-2">
