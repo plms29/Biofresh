@@ -1,7 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ClientLayout } from "@/components/layout/client-layout";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -10,17 +9,18 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "BioFresh OS — Smart Post-Harvest Management",
+  title: {
+    default: "BioFresh OS — Vận hành sau thu hoạch",
+    template: "%s · BioFresh OS",
+  },
   description:
-    "Hệ thống quản lý sau thu hoạch thông minh, tích hợp AI phân tích và tối ưu hóa chuỗi giá trị nông sản Việt Nam.",
-  keywords: [
-    "post-harvest",
-    "nông sản",
-    "AI",
-    "truy xuất nguồn gốc",
-    "OCOP",
-    "sấy thăng hoa",
-  ],
+    "Hệ thống vận hành cho HTX nông sản: nhu cầu khách mua xuống tới vườn, tồn kho thật cho bán hàng, và phòng quyết định cho hàng dư thừa.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1f7350",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -29,10 +29,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="vi" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full bg-background">
-        <ClientLayout>{children}</ClientLayout>
-      </body>
+    <html lang="vi" className={`${inter.variable} antialiased`}>
+      <body className="min-h-dvh bg-background">{children}</body>
     </html>
   );
 }
