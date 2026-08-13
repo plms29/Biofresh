@@ -18,6 +18,7 @@ import { batchLots } from "@/lib/domain/inventory";
 import { isProtocolComplete, protocolDoneCount } from "@/lib/domain/protocol";
 import { EmptyState, Kpi, PageHeader } from "@/components/common/layout-bits";
 import { BatchStatusTag, GradeTag } from "@/components/common/badges";
+import { ProductLabel } from "@/components/common/product-mark";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -75,26 +76,26 @@ export default function PackhousePage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="Nhận hàng và Phân loại"
-        title="Số lượng và hạng thực tế, nhập một lần"
-        description="Con số bạn nhập ở đây chính là tồn kho mà Bán hàng nhìn thấy. Không có camera tự phân loại — kết quả do người kiểm soát chất lượng xác nhận."
+        eyebrow="Intake and grading"
+        title="Real quantity and grade, entered once"
+        description="The figures you enter here are the inventory Sales sees. There is no automatic grading camera — a quality control officer confirms every result."
       />
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Kpi
-          label="Lô chờ nhận / phân loại"
+          label="Batches awaiting intake or grading"
           value={hydrated ? incoming.length : "—"}
           icon={Warehouse}
         />
         <Kpi
-          label="Đã phân loại 24 giờ qua"
+          label="Graded in the last 24 hours"
           value={hydrated ? kg(gradedKg) : "—"}
-          sub={`${todayQc.length} lô`}
+          sub={`${todayQc.length} batches`}
           tone="leaf"
           icon={ClipboardCheck}
         />
         <Kpi
-          label="Lô đang xử lý / chờ xuất"
+          label="Batches in processing or awaiting despatch"
           value={hydrated ? working.length : "—"}
           tone="sun"
           icon={Boxes}
@@ -105,8 +106,8 @@ export default function PackhousePage() {
         value={tab}
         onChange={setTab}
         options={[
-          { value: "incoming", label: "Lô sắp vào", badge: incoming.length },
-          { value: "processing", label: "Xử lý & xuất hàng" },
+          { value: "incoming", label: "Incoming batches", badge: incoming.length },
+          { value: "processing", label: "Processing and despatch" },
         ]}
       />
 
@@ -115,8 +116,8 @@ export default function PackhousePage() {
           {!hydrated ? null : incoming.length === 0 ? (
             <EmptyState
               icon={Warehouse}
-              title="Không có lô nào chờ nhận"
-              hint="Khi ngoài vườn kết thúc lệnh hái, lô sẽ xuất hiện ở đây."
+              title="No batches awaiting intake"
+              hint="When the field finishes a harvest order, the batch appears here."
             />
           ) : (
             incoming.map((b) => {
@@ -131,15 +132,14 @@ export default function PackhousePage() {
                           <BatchStatusTag status={b.status} />
                         </CardTitle>
                         <p className="mt-1 text-sm text-muted-foreground">
-                          {PRODUCTS[b.product].emoji} {PRODUCTS[b.product].label} ·{" "}
-                          {b.origin}
-                          {ho ? ` · lệnh ${ho.id}` : ""}
+                          <ProductLabel product={b.product} /> · {b.origin}
+                          {ho ? ` · harvest order ${ho.id}` : ""}
                         </p>
                       </div>
                       <div className="text-right text-sm">
-                        <p className="tnum font-medium">{kg(b.totalKg)} dự kiến</p>
+                        <p className="tnum font-medium">{kg(b.totalKg)} expected</p>
                         <p className="text-xs text-muted-foreground">
-                          hái {dt(b.harvestedAt)}
+                          picked {dt(b.harvestedAt)}
                         </p>
                       </div>
                     </div>
@@ -154,17 +154,17 @@ export default function PackhousePage() {
                       }}
                     >
                       <PackageCheck />
-                      {b.intakeAt ? "Sửa khối lượng nhận" : "Xác nhận nhập kho"}
+                      {b.intakeAt ? "Edit weight received" : "Confirm intake"}
                     </Button>
                     <Button
                       size="lg"
                       variant={b.intakeAt ? "default" : "secondary"}
                       onClick={() => setQcBatch(b)}
                     >
-                      <ClipboardCheck /> Nhập kết quả phân loại
+                      <ClipboardCheck /> Enter grading result
                     </Button>
                     <Button size="lg" variant="ghost" asChild>
-                      <Link href={`/batches/${b.id}`}>Xem lô</Link>
+                      <Link href={`/batches/${b.id}`}>View batch</Link>
                     </Button>
                   </CardContent>
                 </Card>
@@ -179,8 +179,8 @@ export default function PackhousePage() {
           {!hydrated ? null : working.length === 0 ? (
             <EmptyState
               icon={Boxes}
-              title="Chưa có lô nào đang xử lý"
-              hint="Lô xuất hiện ở đây sau khi bạn xác nhận kết quả phân loại."
+              title="No batches in processing"
+              hint="Batches appear here once you have confirmed a grading result."
             />
           ) : (
             working.map((b) => {
@@ -197,13 +197,13 @@ export default function PackhousePage() {
                           <BatchStatusTag status={b.status} />
                         </CardTitle>
                         <p className="mt-1 text-sm text-muted-foreground">
-                          {PRODUCTS[b.product].emoji} {PRODUCTS[b.product].label} ·{" "}
-                          {kg(b.totalKg)} · phân loại {dt(b.qc?.confirmedAt)}
+                          <ProductLabel product={b.product} /> · {kg(b.totalKg)} ·
+                          graded {dt(b.qc?.confirmedAt)}
                         </p>
                       </div>
                       <div className="min-w-40 text-right">
                         <p className="tnum text-sm font-medium">
-                          Quy trình {doneSteps}/6
+                          Protocol {doneSteps}/6
                         </p>
                         <Meter
                           className="mt-1.5"
@@ -229,7 +229,7 @@ export default function PackhousePage() {
                             </p>
                             {lot && g !== "REJECT" ? (
                               <p className="tnum text-xs text-muted-foreground">
-                                còn {kg(lot.availableKg)} chưa phân bổ
+                                {kg(lot.availableKg)} unallocated
                               </p>
                             ) : null}
                           </div>
@@ -241,20 +241,20 @@ export default function PackhousePage() {
                       (l) => l.grade !== "REJECT" && l.availableKg > 0
                     ) && now > 0 ? (
                       <p className="text-sm text-sun-700">
-                        Hạn phải hành động cho phần chưa phân bổ:{" "}
+                        Action deadline on the unallocated quantity:{" "}
                         {untilText(lots[0].actionDeadline, now)}.
                       </p>
                     ) : null}
 
                     <div>
                       <p className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                        Quy trình Thực địa BioFresh
+                        BioFresh Field Protocol
                       </p>
                       <ProtocolTracker batch={b} />
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      {/* Sau khi xuất hàng thì không sửa phân loại hay ghi lại bước xử lý nữa. */}
+                      {/* Once shipped, the grading result and the protocol steps can no longer be edited. */}
                       {b.status !== "shipped" ? (
                         <>
                           <Button
@@ -262,7 +262,7 @@ export default function PackhousePage() {
                             variant="outline"
                             onClick={() => setQcBatch(b)}
                           >
-                            Sửa kết quả phân loại
+                            Edit grading result
                           </Button>
                           <Button
                             size="lg"
@@ -271,7 +271,7 @@ export default function PackhousePage() {
                               toast(res.message, res.ok ? "success" : "error");
                             }}
                           >
-                            Hoàn tất xử lý / đóng gói
+                            Complete processing and packing
                           </Button>
                         </>
                       ) : null}
@@ -282,10 +282,10 @@ export default function PackhousePage() {
                           disabled={!complete}
                           onClick={() => {
                             shipBatch(b.id);
-                            toast(`Đã xuất hàng lô ${b.id}.`);
+                            toast(`Batch ${b.id} shipped.`);
                           }}
                         >
-                          <Truck /> Xuất hàng
+                          <Truck /> Ship
                         </Button>
                       ) : (
                         <Button
@@ -303,11 +303,11 @@ export default function PackhousePage() {
                             );
                           }}
                         >
-                          Nhập kết quả & đóng lô
+                          Enter result and close batch
                         </Button>
                       )}
                       <Button size="lg" variant="ghost" asChild>
-                        <Link href={`/batches/${b.id}`}>Xem lô</Link>
+                        <Link href={`/batches/${b.id}`}>View batch</Link>
                       </Button>
                     </div>
                   </CardContent>
@@ -326,35 +326,35 @@ export default function PackhousePage() {
         />
       ) : null}
 
-      {/* Xác nhận khối lượng nhận */}
+      {/* Confirm the weight received */}
       <Modal
         open={intakeBatch !== null}
         onClose={() => setIntakeBatch(null)}
-        title={`Nhập kho lô ${intakeBatch?.id ?? ""}`}
-        description="Cân thực tế tại kho, có thể lệch so với số ngoài vườn báo."
+        title={`Intake for batch ${intakeBatch?.id ?? ""}`}
+        description="Weighed at the packhouse — this may differ from the figure the field reported."
         footer={
           <>
             <Button variant="outline" size="lg" onClick={() => setIntakeBatch(null)}>
-              Huỷ
+              Cancel
             </Button>
             <Button
               size="lg"
               onClick={() => {
                 if (!intakeBatch) return;
                 confirmIntake(intakeBatch.id, Number(intakeKg) || 0);
-                toast(`Đã xác nhận nhập kho ${kg(Number(intakeKg) || 0)}.`);
+                toast(`Intake confirmed at ${kg(Number(intakeKg) || 0)}.`);
                 setIntakeBatch(null);
               }}
             >
-              Xác nhận
+              Confirm
             </Button>
           </>
         }
       >
         <Field
-          label="Khối lượng thực nhận (kg)"
+          label="Weight actually received (kg)"
           hint={
-            intakeBatch ? `Ngoài vườn báo ${kg(intakeBatch.totalKg)}` : undefined
+            intakeBatch ? `The field reported ${kg(intakeBatch.totalKg)}` : undefined
           }
         >
           <Input
@@ -367,16 +367,16 @@ export default function PackhousePage() {
         </Field>
       </Modal>
 
-      {/* Đóng lô với kết quả cuối */}
+      {/* Close the batch with the final result */}
       <Modal
         open={closeTarget !== null}
         onClose={() => setCloseTarget(null)}
-        title={`Đóng lô ${closeTarget?.id ?? ""}`}
-        description="Nhập kết quả thực tế từ khách mua để đối chiếu với dự kiến."
+        title={`Close batch ${closeTarget?.id ?? ""}`}
+        description="Enter the actual result from the buyer so it can be compared with the expected value."
         footer={
           <>
             <Button variant="outline" size="lg" onClick={() => setCloseTarget(null)}>
-              Huỷ
+              Cancel
             </Button>
             <Button
               size="lg"
@@ -390,17 +390,17 @@ export default function PackhousePage() {
                   rejectedKg: rej,
                   actualRevenue: Number(revenue) || 0,
                 });
-                toast(`Đã đóng lô ${closeTarget.id}.`);
+                toast(`Batch ${closeTarget.id} closed.`);
                 setCloseTarget(null);
               }}
             >
-              Đóng lô
+              Close batch
             </Button>
           </>
         }
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Khách mua chấp nhận (kg)">
+          <Field label="Accepted by the buyer (kg)">
             <Input
               type="number"
               inputMode="decimal"
@@ -408,7 +408,7 @@ export default function PackhousePage() {
               onChange={(e) => setAccepted(e.target.value)}
             />
           </Field>
-          <Field label="Khách mua từ chối (kg)">
+          <Field label="Rejected by the buyer (kg)">
             <Input
               type="number"
               inputMode="decimal"
@@ -416,7 +416,7 @@ export default function PackhousePage() {
               onChange={(e) => setRejected(e.target.value)}
             />
           </Field>
-          <Field label="Doanh thu thực tế (VND)" className="sm:col-span-2">
+          <Field label="Actual revenue (VND)" className="sm:col-span-2">
             <Input
               type="number"
               inputMode="numeric"

@@ -14,16 +14,16 @@ import { PRODUCTS } from "./catalog";
 import { hoursUntil, kg, vnd } from "./format";
 import type { Lot } from "./inventory";
 
-/** Chi phí thêm ước tính (VND/kg) — cấu hình nội bộ, minh bạch cho Quản lý. */
+/** Estimated extra cost (VND/kg) — internal configuration, visible to the Manager. */
 const COST_PER_KG = {
   transportSpot: 1200,
   transportChannel: 2000,
-  preserve: 3500, // dung dịch + nhân công + làm khô + đóng gói lại
-  process: 2500, // vận chuyển tới nhà máy chế biến
-  hold: 300, // lưu kho thường
+  preserve: 3500, // solution + labour + drying + repacking
+  process: 2500, // haulage to the processing plant
+  hold: 300, // ambient storage
 };
 
-/** Hệ số giá theo kênh khi đổi kênh bán (so với giá tham chiếu nội bộ). */
+/** Price factor per sales channel when switching channel (relative to the internal reference price). */
 const CHANNEL_FACTOR = {
   wholesale: 0.78,
   retail: 0.95,
@@ -56,9 +56,9 @@ function activeSignals(
 }
 
 /**
- * Sinh các phương án xử lý hàng dư thừa cho một lô con.
- * Toàn bộ số liệu đến từ: đơn hàng đang mở, tín hiệu thị trường do Bán hàng nhập,
- * và giá tham chiếu nội bộ. Không có mô hình dự báo — mọi con số đều truy được nguồn.
+ * Builds the surplus-handling options for a single sub-lot.
+ * Every figure comes from open orders, market signals entered by Sales, and the
+ * internal reference price. There is no forecasting model — each number is traceable.
  */
 export function buildOptions(
   lot: Lot,
@@ -73,7 +73,7 @@ export function buildOptions(
   const urgency = urgencyOf(lot, config, now);
   const options: DecisionOption[] = [];
 
-  // 1. Bán ngay — ưu tiên tín hiệu thị trường còn hiệu lực, nếu không có thì bán theo giá tham chiếu có chiết khấu.
+  // 1. Sell now — prefer a market signal that is still valid, otherwise sell at a discount to the reference price.
   const best = activeSignals(signals, lot, now)[0];
   const spotQty = best ? Math.min(qty, best.qtyKg) : qty;
   const spotPrice = best ? best.price : Math.round(ref * 0.88);
@@ -83,12 +83,12 @@ export function buildOptions(
     kind: "sell_now",
     label: DECISION_LABEL.sell_now,
     detail: best
-      ? `Bán ${kg(spotQty)} cho ${best.market} theo tín hiệu ${vnd(
+      ? `Sell ${kg(spotQty)} to ${best.market} on the market signal of ${vnd(
           best.price
-        )}/kg (hiệu lực tới ${new Date(best.validUntil).toLocaleDateString(
-          "vi-VN"
+        )}/kg (valid until ${new Date(best.validUntil).toLocaleDateString(
+          "en-GB"
         )}).`
-      : `Chưa có tín hiệu thị trường còn hiệu lực. Bán nhanh theo giá tham chiếu trừ 12% để xả hàng: ${vnd(
+      : `No market signal is currently valid. Clear the lot quickly at the internal reference price less 12%: ${vnd(
           spotPrice
         )}/kg.`,
     netValue: spotQty * spotPrice - spotCost,
@@ -96,19 +96,19 @@ export function buildOptions(
     cashInDays: best ? 3 : 2,
     risk: best ? "low" : "medium",
     riskNote: best
-      ? "Đã có người mua xác định, rủi ro thấp."
-      : "Chưa có người mua xác định, có thể phải giảm giá thêm.",
+      ? "A named buyer is already in place, so the risk is low."
+      : "No named buyer yet; a further price cut may be needed.",
     basis: best
-      ? `Tín hiệu thị trường ${best.id} (${best.enteredBy})`
-      : "Giá tham chiếu nội bộ − 12%",
+      ? `Market signal ${best.id} (${best.enteredBy})`
+      : "Internal reference price − 12%",
     requiresProtocol: false,
     certainty: best ? 0.95 : 0.75,
     certaintyNote: best
-      ? `Đã có người mua hỏi hàng (${best.market}).`
-      : "Chưa có người mua hỏi hàng, phải đi chào lại.",
+      ? `A buyer has already asked for this produce (${best.market}).`
+      : "No buyer has asked yet; the lot must be offered around again.",
   });
 
-  // 2. Đổi kênh bán — dùng kênh của đơn hàng đang mở khác, hoặc kênh chợ đầu mối.
+  // 2. Switch channel — reuse the channel of another open order, or fall back to the wholesale market.
   const otherChannels = [
     ...new Set(
       orders
@@ -124,71 +124,78 @@ export function buildOptions(
     id: "switch_channel",
     kind: "switch_channel",
     label: `${DECISION_LABEL.switch_channel} → ${SALES_CHANNEL_LABEL[channel]}`,
-    detail: `Chuyển toàn bộ ${kg(qty)} sang kênh ${
+    detail: `Move all ${kg(qty)} to the ${
       SALES_CHANNEL_LABEL[channel]
-    } với giá ước tính ${vnd(chPrice)}/kg (${Math.round(
+    } channel at an estimated ${vnd(chPrice)}/kg (${Math.round(
       CHANNEL_FACTOR[channel] * 100
-    )}% giá tham chiếu). Không cần thêm xử lý.`,
+    )}% of the reference price). No extra handling required.`,
     netValue: qty * chPrice - chCost,
     extraCost: chCost,
     cashInDays: 5,
     risk: "low",
-    riskNote: "Kênh nhận số lượng lớn, tiêu chuẩn thấp hơn nên ít bị từ chối.",
-    basis: `Giá tham chiếu × hệ số kênh ${SALES_CHANNEL_LABEL[channel]}`,
+    riskNote:
+      "The channel takes large volumes at a lower standard, so rejections are rare.",
+    basis: `Reference price x ${SALES_CHANNEL_LABEL[channel]} channel factor`,
     requiresProtocol: false,
     certainty: 0.85,
-    certaintyNote: "Kênh quen, nhận số lượng lớn nhưng vẫn phải chốt giá lại.",
+    certaintyNote:
+      "A familiar channel that takes volume, but the price still has to be agreed.",
   });
 
-  // 3. Bảo quản theo Quy trình Thực địa BioFresh — giữ được hạng, bán sau theo giá tốt hơn.
+  // 3. Preserve under the BioFresh Field Protocol — hold the grade and sell later at a better price.
   const preserveCost = qty * COST_PER_KG.preserve;
-  const preserveKeep = 0.94; // 6% hao hụt vật lý khi xử lý lại
+  const preserveKeep = 0.94; // 6% physical loss during re-handling
   options.push({
     id: "preserve",
     kind: "preserve",
     label: DECISION_LABEL.preserve,
-    detail: `Xử lý bảo quản để giữ ${GRADE_LABEL[lot.grade]} thêm ${
+    detail: `Run the preservation treatment to hold ${
+      GRADE_LABEL[lot.grade]
+    } for a further ${
       meta.actionWindowHours
-    } giờ, chờ đơn giá tốt. Ước tính còn ${kg(
+    } hours while a better-priced order is found. About ${kg(
       qty * preserveKeep
-    )} sau hao hụt, bán ở ${vnd(ref)}/kg. Bắt buộc ghi đủ 6 bước quy trình.`,
+    )} is expected to remain after losses, sold at ${vnd(
+      ref
+    )}/kg. All six protocol steps must be recorded.`,
     netValue: qty * preserveKeep * ref - preserveCost,
     extraCost: preserveCost,
     cashInDays: 8,
     risk: urgency === "high" ? "high" : "medium",
     riskNote:
       urgency === "high"
-        ? "Lô đã sát hạn hành động, xử lý bảo quản có thể không kịp."
-        : "Cần nhân công và đủ dung dịch trong ngày; phụ thuộc đơn hàng tương lai.",
-    basis: "Giá tham chiếu nội bộ − chi phí xử lý bảo quản",
+        ? "The lot is already close to its action deadline; the treatment may not finish in time."
+        : "Needs labour and enough solution on the day, and depends on a future order.",
+    basis: "Internal reference price − preservation cost",
     requiresProtocol: true,
     certainty: urgency === "high" ? 0.55 : 0.7,
     certaintyNote:
-      "Giữ được hạng nhưng vẫn phải tìm đơn sau khi bảo quản xong.",
+      "The grade is preserved, but an order still has to be found afterwards.",
   });
 
-  // 4. Chế biến — chắc chắn tiêu thụ hết, giá thấp.
+  // 4. Processing — guaranteed offtake at a low price.
   const procPrice = meta.refPrice.PROCESS;
   const procCost = qty * COST_PER_KG.process;
   options.push({
     id: "process",
     kind: "process",
     label: DECISION_LABEL.process,
-    detail: `Bán toàn bộ ${kg(qty)} cho nhà máy chế biến ở ${vnd(
+    detail: `Sell all ${kg(qty)} to the processing plant at ${vnd(
       procPrice
-    )}/kg. Chắc chắn tiêu thụ hết, không lo hàng hỏng.`,
+    )}/kg. The whole lot is taken, with no spoilage risk.`,
     netValue: qty * procPrice - procCost,
     extraCost: procCost,
     cashInDays: 12,
     risk: "low",
-    riskNote: "Giá thấp nhất nhưng gần như không có rủi ro tồn hàng.",
-    basis: "Giá hàng chế biến trong danh mục nội bộ",
+    riskNote:
+      "The lowest price, but almost no risk of being left with unsold stock.",
+    basis: "Processing-grade price from the internal catalogue",
     requiresProtocol: false,
     certainty: 0.98,
-    certaintyNote: "Nhà máy nhận hết, gần như chắc chắn bán được.",
+    certaintyNote: "The plant takes the full volume, so the sale is near certain.",
   });
 
-  // 5. Giữ hàng chờ tín hiệu — chỉ hợp lý khi còn nhiều thời gian.
+  // 5. Hold for a better signal — only sensible when there is still plenty of time.
   const holdCost = qty * COST_PER_KG.hold;
   options.push({
     id: "hold",
@@ -196,41 +203,41 @@ export function buildOptions(
     label: DECISION_LABEL.hold,
     detail:
       urgency === "high"
-        ? `Không khuyến nghị: lô chỉ còn dưới ${config.urgentWithinHours} giờ tới hạn hành động.`
-        : `Giữ nguyên trong kho, chờ Bán hàng nhập tín hiệu tốt hơn ${vnd(
+        ? `Not recommended: the lot has under ${config.urgentWithinHours} hours left before its action deadline.`
+        : `Keep the lot in store and wait for Sales to enter a market signal above ${vnd(
             ref
-          )}/kg. Rà lại trước hạn hành động.`,
+          )}/kg. Review again before the action deadline.`,
     netValue: urgency === "high" ? qty * ref * 0.5 - holdCost : qty * ref - holdCost,
     extraCost: holdCost,
     cashInDays: 10,
     risk: urgency === "high" ? "high" : "medium",
     riskNote:
       urgency === "high"
-        ? "Rủi ro mất giá rất cao nếu không hành động trong hôm nay."
-        : "Chưa có người mua; giá trị dự kiến chỉ là kỳ vọng.",
-    basis: "Giá tham chiếu nội bộ, chưa có người mua xác nhận",
+        ? "Very high risk of losing value unless the lot is acted on today."
+        : "No buyer yet, so the figure remains an expectation.",
+    basis: "Internal reference price, with no confirmed buyer",
     requiresProtocol: false,
     certainty: urgency === "high" ? 0.25 : 0.5,
     certaintyNote:
       urgency === "high"
-        ? "Chưa có ai hỏi mua và lô sắp tới hạn — khả năng bán được đúng giá rất thấp."
-        : "Chưa có ai hỏi mua; con số chỉ là kỳ vọng nếu tín hiệu tốt xuất hiện.",
+        ? "Nobody has asked for the lot and its deadline is close, so selling at this price is unlikely."
+        : "Nobody has asked for the lot; the figure holds only if a good signal appears.",
   });
 
   return options;
 }
 
 /**
- * Giá trị kỳ vọng = giá trị ròng × khả năng thực hiện được.
- * Một phương án chưa có người mua thì con số đẹp cũng chỉ là kỳ vọng.
+ * Expected value = net value x confidence.
+ * Without a buyer in place, even an attractive figure is only an expectation.
  */
 export function expectedValue(option: DecisionOption): number {
   return option.netValue * option.certainty;
 }
 
 /**
- * Phương án được hệ thống gợi ý: giá trị kỳ vọng cao nhất, trừ điểm cho rủi ro
- * và cho thời gian chôn vốn (1%/ngày trên giá trị kỳ vọng).
+ * The option the system recommends: the highest expected value, discounted for
+ * risk and for tied-up capital (1% per day of expected value).
  */
 export function recommendedOption(options: DecisionOption[]): DecisionOption {
   const score = (o: DecisionOption) => {
@@ -241,7 +248,7 @@ export function recommendedOption(options: DecisionOption[]): DecisionOption {
   return [...options].sort((a, b) => score(b) - score(a))[0];
 }
 
-/** Lời giải thích dạng quy tắc — không gọi mô hình ngoài, mọi câu đều truy được nguồn. */
+/** A rule-based explanation — no external model is called, and every line is traceable. */
 export function explainOption(
   option: DecisionOption,
   options: DecisionOption[],
@@ -253,45 +260,49 @@ export function explainOption(
   const lines: string[] = [];
 
   lines.push(
-    `${option.label}: giá trị ròng dự kiến ${vnd(option.netValue)} cho ${kg(
+    `${option.label}: expected net value ${vnd(option.netValue)} for ${kg(
       lot.availableKg
-    )} ${GRADE_LABEL[lot.grade]}, đã trừ chi phí thêm ${vnd(option.extraCost)}.`
+    )} ${GRADE_LABEL[lot.grade]}, after extra cost of ${vnd(option.extraCost)}.`
   );
   lines.push(
-    `Khả năng thực hiện ${Math.round(
+    `Confidence ${Math.round(
       option.certainty * 100
-    )}% — ${option.certaintyNote} Giá trị kỳ vọng còn ${vnd(ev)}.`
+    )}% — ${option.certaintyNote} That leaves an expected value of ${vnd(ev)}.`
   );
-  lines.push(`Cơ sở số liệu: ${option.basis}. Thu tiền sau khoảng ${option.cashInDays} ngày.`);
-  lines.push(`Rủi ro: ${option.riskNote}`);
+  lines.push(
+    `Data source: ${option.basis}. Cash expected in about ${option.cashInDays} days.`
+  );
+  lines.push(`Risk: ${option.riskNote}`);
 
   if (ev < bestEv) {
     lines.push(
-      `So với phương án có giá trị kỳ vọng cao nhất (${
+      `Against the option with the highest expected value (${
         options.find((o) => expectedValue(o) === bestEv)!.label
-      }), phương án này thấp hơn ${vnd(bestEv - ev)}.`
+      }), this one is ${vnd(bestEv - ev)} lower.`
     );
   } else {
-    lines.push("Đây là phương án có giá trị kỳ vọng cao nhất.");
+    lines.push("This is the option with the highest expected value.");
   }
 
   if (option.id === rec.id) {
-    lines.push("Hệ thống gợi ý phương án này sau khi cân giữa giá trị, rủi ro và thời gian thu tiền.");
+    lines.push(
+      "The system recommends this option after weighing value, risk and time to cash."
+    );
   } else {
     lines.push(
-      `Hệ thống gợi ý ${rec.label} vì cân bằng hơn giữa giá trị ròng, rủi ro và thời gian thu tiền.`
+      `The system recommends ${rec.label} instead, as a better balance of net value, risk and time to cash.`
     );
   }
 
   if (option.requiresProtocol) {
     lines.push(
-      "Bắt buộc ghi đủ 6 bước Quy trình Thực địa BioFresh trước khi đánh dấu hoàn tất xử lý."
+      "All six steps of the BioFresh Field Protocol must be recorded before processing can be marked complete."
     );
   }
   return lines;
 }
 
-/** Việc cần làm sinh ra sau khi Quản lý chốt phương án. */
+/** The tasks created once the Manager has committed to an option. */
 export function tasksForOption(
   option: DecisionOption,
   lot: Pick<Lot, "batchId" | "availableKg">
@@ -306,33 +317,39 @@ export function tasksForOption(
   switch (option.kind) {
     case "sell_now":
       return [
-        base(`Chốt người mua và giá cho ${kg(lot.availableKg)} lô ${lot.batchId}`, "sales"),
-        base(`Đóng gói và xuất ${kg(lot.availableKg)} trong hôm nay`, "packhouse"),
+        base(
+          `Confirm buyer and price for ${kg(lot.availableKg)} from batch ${lot.batchId}`,
+          "sales"
+        ),
+        base(`Pack and dispatch ${kg(lot.availableKg)} today`, "packhouse"),
       ];
     case "switch_channel":
       return [
-        base(`Liên hệ đầu mối kênh mới, xác nhận số lượng và giá`, "sales"),
-        base(`Đóng gói theo quy cách kênh mới`, "packhouse"),
+        base(`Contact the new channel and confirm volume and price`, "sales"),
+        base(`Pack to the new channel's specification`, "packhouse"),
       ];
     case "preserve":
       return [
-        base(`Pha dung dịch và ghi nhận 6 bước quy trình cho lô ${lot.batchId}`, "packhouse"),
-        base(`Tìm đơn cho ${kg(lot.availableKg)} đã bảo quản`, "sales"),
+        base(
+          `Mix the solution and record all six protocol steps for batch ${lot.batchId}`,
+          "packhouse"
+        ),
+        base(`Find an order for the ${kg(lot.availableKg)} now preserved`, "sales"),
       ];
     case "process":
       return [
-        base(`Xác nhận đơn với nhà máy chế biến`, "sales"),
-        base(`Cân, dồn thùng và giao cho nhà máy`, "packhouse"),
+        base(`Confirm the order with the processing plant`, "sales"),
+        base(`Weigh, consolidate crates and hand over to the plant`, "packhouse"),
       ];
     case "hold":
       return [
-        base(`Nhập tín hiệu thị trường mới trước hạn hành động`, "sales"),
-        base(`Kiểm tra lại chất lượng lô trước hạn`, "packhouse"),
+        base(`Enter a fresh market signal before the action deadline`, "sales"),
+        base(`Re-check the lot's quality before the deadline`, "packhouse"),
       ];
   }
 }
 
-/** Mở ca quyết định cho một lô con vượt ngưỡng hàng dư thừa do HTX cấu hình. */
+/** Opens a decision case for a sub-lot that has passed the co-op's configured surplus threshold. */
 export function buildDecisionCase(
   lot: Lot,
   orders: Order[],

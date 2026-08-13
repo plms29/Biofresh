@@ -26,8 +26,8 @@ export function AlertList({
   if (alerts.length === 0) {
     return (
       <EmptyState
-        title="Không có cảnh báo"
-        hint={emptyHint ?? "Mọi đơn hàng và lô hàng đang trong ngưỡng an toàn."}
+        title="No alerts"
+        hint={emptyHint ?? "Every order and batch is within safe limits."}
       />
     );
   }
@@ -74,7 +74,7 @@ export function AlertList({
       })}
       {limit && alerts.length > limit ? (
         <li className="px-1 text-xs text-muted-foreground">
-          và {alerts.length - limit} cảnh báo khác…
+          and {alerts.length - limit} more alerts…
         </li>
       ) : null}
     </ul>

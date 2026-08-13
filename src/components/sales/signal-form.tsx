@@ -18,7 +18,7 @@ import { useToast } from "@/components/ui/toast";
 
 const GRADES: Grade[] = ["A", "B", "PROCESS"];
 
-/** Ghi nhận nhu cầu/giá thị trường mà Bán hàng nghe được — nguồn số liệu cho Phòng quyết định. */
+/** Records the market demand and prices Sales hears about — the data behind the Decision Room. */
 export function SignalFormModal({
   open,
   onClose,
@@ -39,11 +39,11 @@ export function SignalFormModal({
   const [error, setError] = React.useState<string | null>(null);
 
   const submit = () => {
-    if (!market.trim()) return setError("Nhập tên khách mua / thị trường.");
+    if (!market.trim()) return setError("Enter the buyer or market name.");
     const qty = Number(qtyKg);
     const p = Number(price);
-    if (!qty || qty <= 0) return setError("Số lượng phải lớn hơn 0.");
-    if (!p || p <= 0) return setError("Nhập giá hoặc báo giá.");
+    if (!qty || qty <= 0) return setError("Quantity must be greater than 0.");
+    if (!p || p <= 0) return setError("Enter the price or the quote.");
     addSignal({
       market: market.trim(),
       product,
@@ -55,7 +55,7 @@ export function SignalFormModal({
       ).toISOString(),
       source,
     });
-    toast("Đã nhập tín hiệu thị trường — Phòng quyết định sẽ dùng số liệu này.");
+    toast("Market signal recorded — the Decision Room will use these figures.");
     setMarket("");
     setPrice("");
     setError(null);
@@ -66,15 +66,15 @@ export function SignalFormModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Nhập tín hiệu thị trường"
-      description="Số lượng đang cần và giá nghe được từ khách mua hoặc chợ đầu mối."
+      title="Record a market signal"
+      description="The quantity currently wanted and the price heard from a buyer or wholesale market."
       footer={
         <>
           <Button variant="outline" size="lg" onClick={onClose}>
-            Huỷ
+            Cancel
           </Button>
           <Button size="lg" onClick={submit}>
-            Lưu tín hiệu
+            Save signal
           </Button>
         </>
       }
@@ -85,27 +85,27 @@ export function SignalFormModal({
             {error}
           </p>
         ) : null}
-        <Field label="Khách mua / thị trường">
+        <Field label="Buyer / market">
           <Input
             value={market}
             onChange={(e) => setMarket(e.target.value)}
-            placeholder="Chợ đầu mối Bình Điền"
+            placeholder="Binh Dien Wholesale Market"
           />
         </Field>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Sản phẩm">
+          <Field label="Product">
             <Select
               value={product}
               onChange={(e) => setProduct(e.target.value as ProductKey)}
             >
               {PRODUCT_KEYS.map((p) => (
                 <option key={p} value={p}>
-                  {PRODUCTS[p].emoji} {PRODUCTS[p].label}
+                  {PRODUCTS[p].label}
                 </option>
               ))}
             </Select>
           </Field>
-          <Field label="Hạng">
+          <Field label="Grade">
             <Select
               value={grade}
               onChange={(e) => setGrade(e.target.value as Grade)}
@@ -117,7 +117,7 @@ export function SignalFormModal({
               ))}
             </Select>
           </Field>
-          <Field label="Số lượng đang cần (kg)">
+          <Field label="Quantity wanted (kg)">
             <Input
               type="number"
               inputMode="decimal"
@@ -125,7 +125,7 @@ export function SignalFormModal({
               onChange={(e) => setQtyKg(e.target.value)}
             />
           </Field>
-          <Field label="Giá / báo giá (VND/kg)">
+          <Field label="Price / quote (VND/kg)">
             <Input
               type="number"
               inputMode="numeric"
@@ -134,7 +134,7 @@ export function SignalFormModal({
               placeholder="112000"
             />
           </Field>
-          <Field label="Thời hạn hiệu lực (ngày)">
+          <Field label="Valid for (days)">
             <Input
               type="number"
               inputMode="numeric"
@@ -142,7 +142,7 @@ export function SignalFormModal({
               onChange={(e) => setValidDays(e.target.value)}
             />
           </Field>
-          <Field label="Nguồn">
+          <Field label="Source">
             <Select
               value={source}
               onChange={(e) => setSource(e.target.value as OrderChannel)}

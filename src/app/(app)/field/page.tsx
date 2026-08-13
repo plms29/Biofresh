@@ -53,28 +53,28 @@ export default function FieldPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="Thu hoạch hôm nay"
-        title="Hái đúng tiêu chuẩn khách mua"
-        description="Mỗi lệnh dưới đây đã được rút gọn từ tiêu chuẩn khách mua. Cập nhật số kg đã hái để kho và bán hàng thấy ngay."
+        eyebrow="Today's harvest"
+        title="Pick to the buyer's standard"
+        description="Every order below is a short summary of the buyer specification. Update the kg picked and the packhouse and Sales see it straight away."
       />
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Kpi
-          label="Lệnh đang mở"
+          label="Open harvest orders"
           value={hydrated ? active.length : "—"}
-          sub={`${active.filter((h) => h.status === "in_progress").length} lệnh đang hái`}
+          sub={`${active.filter((h) => h.status === "in_progress").length} being picked`}
           icon={Sprout}
         />
         <Kpi
-          label="Mục tiêu hôm nay"
+          label="Target today"
           value={hydrated ? kg(targetKg) : "—"}
           tone="leaf"
           icon={CircleDot}
         />
         <Kpi
-          label="Đã hái"
+          label="Picked"
           value={hydrated ? kg(pickedKg) : "—"}
-          sub={targetKg > 0 ? `${Math.round((pickedKg / targetKg) * 100)}% mục tiêu` : undefined}
+          sub={targetKg > 0 ? `${Math.round((pickedKg / targetKg) * 100)}% of target` : undefined}
           tone="sun"
           icon={Timer}
         />
@@ -83,8 +83,8 @@ export default function FieldPage() {
       {!hydrated ? null : active.length === 0 ? (
         <EmptyState
           icon={Sprout}
-          title="Không có lệnh thu hoạch nào"
-          hint="Bán hàng sẽ tạo lệnh khi có đơn mới. Bạn sẽ thấy hướng dẫn hái ngay tại đây."
+          title="No harvest orders"
+          hint="Sales raises a harvest order whenever a new order comes in. The picking guide will appear right here."
         />
       ) : (
         <div className="flex flex-col gap-4">
@@ -100,7 +100,7 @@ export default function FieldPage() {
                       <CardTitle className="text-lg">{ho.guide.headline}</CardTitle>
                       <p className="mt-1 text-sm text-muted-foreground">
                         {ho.id} · {ho.farm}
-                        {order ? ` · đơn ${order.id}` : ""}
+                        {order ? ` · order ${order.id}` : ""}
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-1">
@@ -120,7 +120,7 @@ export default function FieldPage() {
                           late ? "font-medium text-risk-700" : "text-muted-foreground"
                         )}
                       >
-                        hạn chót {now ? untilText(ho.deadline, now) : "—"}
+                        Deadline: {now ? untilText(ho.deadline, now) : "—"}
                       </span>
                     </div>
                   </div>
@@ -131,17 +131,18 @@ export default function FieldPage() {
                     <div className="flex items-start gap-2 rounded-xl bg-sun-100 px-3.5 py-2.5 text-sm text-sun-700">
                       <RefreshCw className="mt-0.5 size-4 shrink-0" />
                       <span>
-                        Tiêu chuẩn đã được Bán hàng cập nhật (lần {ho.guide.revision}).
-                        Đọc lại hướng dẫn bên dưới trước khi hái tiếp.
+                        Sales has updated the specification (revision{" "}
+                        {ho.guide.revision}). Read the guide below again before
+                        you carry on picking.
                       </span>
                     </div>
                   ) : null}
 
-                  {/* Hướng dẫn hái trực quan */}
+                  {/* Visual picking guide */}
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="rounded-xl bg-leaf-50 p-4 ring-1 ring-leaf-200">
                       <p className="text-xs font-semibold tracking-wide text-leaf-700 uppercase">
-                        Hái như thế này
+                        Pick like this
                       </p>
                       <ul className="mt-2 flex flex-col gap-2">
                         {ho.guide.doList.map((item) => (
@@ -154,7 +155,7 @@ export default function FieldPage() {
                     </div>
                     <div className="rounded-xl bg-risk-100/70 p-4 ring-1 ring-risk-300/60">
                       <p className="text-xs font-semibold tracking-wide text-risk-700 uppercase">
-                        Tuyệt đối không
+                        Never do this
                       </p>
                       <ul className="mt-2 flex flex-col gap-2">
                         {ho.guide.dontList.map((item) => (
@@ -170,7 +171,7 @@ export default function FieldPage() {
                   <div>
                     <div className="mb-1.5 flex items-baseline justify-between">
                       <span className="tnum text-sm">
-                        Đã hái {kg(ho.pickedKg)} / {kg(ho.targetKg)}
+                        Picked {kg(ho.pickedKg)} / {kg(ho.targetKg)}
                       </span>
                       <span className="tnum text-sm text-muted-foreground">
                         {Math.round(pct)}%
@@ -185,10 +186,10 @@ export default function FieldPage() {
                         size="lg"
                         onClick={() => {
                           startHarvest(ho.id);
-                          toast(`Đã bắt đầu lệnh ${ho.id}.`);
+                          toast(`Started harvest order ${ho.id}.`);
                         }}
                       >
-                        Bắt đầu hái
+                        Start picking
                       </Button>
                     ) : null}
                     <Button
@@ -215,7 +216,7 @@ export default function FieldPage() {
                         setAmount(String(ho.pickedKg));
                       }}
                     >
-                      Nhập số kg
+                      Enter kg
                     </Button>
                     <Button
                       size="lg"
@@ -225,7 +226,7 @@ export default function FieldPage() {
                         setIncidentNote("");
                       }}
                     >
-                      <AlertTriangle /> Báo sự cố
+                      <AlertTriangle /> Report an incident
                     </Button>
                     <Button
                       size="lg"
@@ -234,18 +235,18 @@ export default function FieldPage() {
                       onClick={() => {
                         const id = finishHarvest(ho.id);
                         toast(
-                          `Đã chuyển ${kg(ho.pickedKg)} về kho — lô ${id} chờ nhận hàng.`
+                          `Sent ${kg(ho.pickedKg)} to the packhouse — batch ${id} is awaiting intake.`
                         );
                       }}
                     >
-                      Xong, chuyển về kho
+                      Finished, send to packhouse
                     </Button>
                   </div>
 
                   {ho.incidents.length > 0 ? (
                     <div className="rounded-xl bg-muted/50 px-3.5 py-3">
                       <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                        Sự cố đã báo
+                        Incidents reported
                       </p>
                       <ul className="mt-1.5 flex flex-col gap-1.5 text-sm">
                         {ho.incidents.map((i) => (
@@ -267,7 +268,7 @@ export default function FieldPage() {
       {hydrated && done.length > 0 ? (
         <Card>
           <CardHeader className="border-b">
-            <CardTitle>Lệnh đã xong</CardTitle>
+            <CardTitle>Finished harvest orders</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="flex flex-col gap-2 text-sm">
@@ -286,67 +287,67 @@ export default function FieldPage() {
         </Card>
       ) : null}
 
-      {/* Báo sự cố */}
+      {/* Report an incident */}
       <Modal
         open={incidentFor !== null}
         onClose={() => setIncidentFor(null)}
-        title={`Báo sự cố — ${incidentFor?.id ?? ""}`}
-        description="Kho và quản lý sẽ thấy ngay ghi chú này."
+        title={`Report an incident — ${incidentFor?.id ?? ""}`}
+        description="The packhouse and the manager will see this note immediately."
         footer={
           <>
             <Button variant="outline" size="lg" onClick={() => setIncidentFor(null)}>
-              Huỷ
+              Cancel
             </Button>
             <Button
               size="lg"
               onClick={() => {
                 if (!incidentFor || !incidentNote.trim()) return;
                 reportIncident(incidentFor.id, incidentNote.trim());
-                toast("Đã báo sự cố.", "info");
+                toast("Incident reported.", "info");
                 setIncidentFor(null);
               }}
             >
-              Gửi
+              Send
             </Button>
           </>
         }
       >
-        <Field label="Chuyện gì đang xảy ra?">
+        <Field label="What is happening?">
           <Textarea
             value={incidentNote}
             onChange={(e) => setIncidentNote(e.target.value)}
-            placeholder="Luống cuối bị sương muối, trái nhỏ hơn tiêu chuẩn…"
+            placeholder="Frost damage on the last row, fruit smaller than the specification…"
           />
         </Field>
       </Modal>
 
-      {/* Nhập số kg đã hái */}
+      {/* Enter the kg picked */}
       <Modal
         open={amountFor !== null}
         onClose={() => setAmountFor(null)}
-        title={`Cập nhật sản lượng — ${amountFor?.id ?? ""}`}
+        title={`Update quantity picked — ${amountFor?.id ?? ""}`}
         footer={
           <>
             <Button variant="outline" size="lg" onClick={() => setAmountFor(null)}>
-              Huỷ
+              Cancel
             </Button>
             <Button
               size="lg"
               onClick={() => {
                 if (!amountFor) return;
                 updatePicked(amountFor.id, Number(amount) || 0);
-                toast("Đã cập nhật sản lượng đã hái.");
+                toast("Quantity picked updated.");
                 setAmountFor(null);
               }}
             >
-              Lưu
+              Save
             </Button>
           </>
         }
       >
         <Field
-          label="Số kg đã hái"
-          hint={amountFor ? `Mục tiêu ${kg(amountFor.targetKg)}` : undefined}
+          label="Kilograms picked"
+          hint={amountFor ? `Target ${kg(amountFor.targetKg)}` : undefined}
         >
           <Input
             type="number"

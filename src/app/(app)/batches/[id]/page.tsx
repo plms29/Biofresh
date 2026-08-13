@@ -22,6 +22,7 @@ import {
   GradeTag,
 } from "@/components/common/badges";
 import { QrCode } from "@/components/common/qr-code";
+import { ProductLabel } from "@/components/common/product-mark";
 import { ProtocolTracker } from "@/components/packhouse/protocol-tracker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,7 +44,7 @@ export default function BatchDetailPage() {
 
   if (!hydrated) return null;
 
-  // Sau khi hydrate mới có window — mã QR cần địa chỉ đầy đủ để quét được.
+  // `window` only exists after hydration — the QR code needs a full URL to scan.
   const passportUrl = `${window.location.origin}/p/${encodeURIComponent(batchId)}`;
 
   if (!batch) {
@@ -51,13 +52,13 @@ export default function BatchDetailPage() {
       <div className="flex flex-col gap-6">
         <Button variant="ghost" asChild className="w-fit">
           <Link href="/batches">
-            <ArrowLeft /> Danh sách lô
+            <ArrowLeft /> All batches
           </Link>
         </Button>
         <EmptyState
           icon={Boxes}
-          title={`Không tìm thấy lô ${batchId}`}
-          hint="Lô có thể đã bị xoá khi đặt lại dữ liệu trình diễn."
+          title={`Batch ${batchId} not found`}
+          hint="It may have been removed when the demo data was reset."
         />
       </div>
     );
@@ -74,26 +75,26 @@ export default function BatchDetailPage() {
     <div className="flex flex-col gap-6">
       <Button variant="ghost" asChild className="w-fit">
         <Link href="/batches">
-          <ArrowLeft /> Danh sách lô
+          <ArrowLeft /> All batches
         </Link>
       </Button>
 
       <PageHeader
-        eyebrow={`${meta.emoji} ${meta.label}`}
+        eyebrow={meta.label}
         title={batch.id}
-        description={`${batch.origin} · thu hoạch ${full(batch.harvestedAt)}${
-          ho ? ` · lệnh ${ho.id}` : ""
+        description={`${batch.origin} · harvested ${full(batch.harvestedAt)}${
+          ho ? ` · harvest order ${ho.id}` : ""
         }`}
         actions={
           <Button variant="outline" size="lg" asChild>
             <Link href={`/p/${encodeURIComponent(batch.id)}`} target="_blank">
-              <BadgeCheck /> Hộ chiếu Quy trình
+              <BadgeCheck /> Process Passport
             </Link>
           </Button>
         }
       />
 
-      {/* Hành trình trạng thái */}
+      {/* Status journey */}
       <Card>
         <CardContent>
           <ol className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
@@ -122,7 +123,7 @@ export default function BatchDetailPage() {
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <BatchStatusTag status={batch.status} />
             <span className="tnum text-sm text-muted-foreground">
-              {kg(batch.totalKg)} · nhập kho {full(batch.intakeAt)}
+              {kg(batch.totalKg)} · intake {full(batch.intakeAt)}
             </span>
           </div>
         </CardContent>
@@ -130,23 +131,23 @@ export default function BatchDetailPage() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="flex flex-col gap-4 lg:col-span-2">
-          {/* Kết quả kiểm soát chất lượng */}
+          {/* Quality control result */}
           <Card>
             <CardHeader className="border-b">
               <SectionTitle
-                title="Kết quả kiểm soát chất lượng"
+                title="Quality control result"
                 hint={
                   batch.qc
                     ? `${batch.qc.confirmedBy} · ${full(batch.qc.confirmedAt)}`
-                    : "Kho đóng gói chưa xác nhận phân loại."
+                    : "The packhouse has not confirmed a grading result yet."
                 }
               />
             </CardHeader>
             <CardContent>
               {!batch.qc ? (
                 <EmptyState
-                  title="Chưa có kết quả phân loại"
-                  hint="Tồn kho chỉ xuất hiện sau khi kho đóng gói xác nhận số kg từng hạng."
+                  title="No grading result yet"
+                  hint="Inventory only appears once the packhouse confirms the kg in each grade."
                 />
               ) : (
                 <>
@@ -164,7 +165,7 @@ export default function BatchDetailPage() {
                           </p>
                           {lot && g !== "REJECT" ? (
                             <p className="tnum text-xs text-muted-foreground">
-                              còn {kg(lot.availableKg)}
+                              {kg(lot.availableKg)} left
                             </p>
                           ) : null}
                         </div>
@@ -173,31 +174,31 @@ export default function BatchDetailPage() {
                   </div>
                   {batch.qc.notes ? (
                     <p className="mt-3 text-sm text-muted-foreground">
-                      Ghi chú: {batch.qc.notes}
+                      Notes: {batch.qc.notes}
                     </p>
                   ) : null}
                   {batch.qc.photos.length > 0 ? (
                     <div className="mt-3 flex flex-wrap gap-2">
                       {batch.qc.photos.map((src, i) => (
-                        // Ảnh do kho tải lên, lưu dạng data URL
+                        // Photos uploaded by the packhouse, stored as data URLs
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           key={i}
                           src={src}
-                          alt={`Ảnh phân loại ${i + 1}`}
+                          alt={`Grading photo ${i + 1}`}
                           className="size-20 rounded-lg object-cover ring-1 ring-foreground/10"
                         />
                       ))}
                     </div>
                   ) : null}
-                  {/* Hạn hành động chỉ còn ý nghĩa khi lô chưa xuất/đóng và vẫn còn hàng chưa phân bổ. */}
+                  {/* The action deadline only matters while the batch is neither shipped nor closed and still has unallocated stock. */}
                   {lots.some((l) => l.grade !== "REJECT" && l.availableKg > 0) &&
                   batch.status !== "closed" &&
                   batch.status !== "shipped" &&
                   now > 0 ? (
                     <p className="mt-3 text-sm text-sun-700">
-                      Hạn phải hành động: {untilText(lots[0].actionDeadline, now)} (
-                      {meta.actionWindowHours} giờ sau kiểm soát chất lượng).
+                      Action deadline: {untilText(lots[0].actionDeadline, now)} (
+                      {meta.actionWindowHours} hours after quality control).
                     </p>
                   ) : null}
                 </>
@@ -205,12 +206,12 @@ export default function BatchDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Quy trình Thực địa */}
+          {/* Field Protocol */}
           <Card>
             <CardHeader className="border-b">
               <SectionTitle
-                title="Quy trình Thực địa BioFresh"
-                hint="Sáu bước bắt buộc; đây là nội dung duy nhất khách mua thấy khi quét QR."
+                title="BioFresh Field Protocol"
+                hint="Six mandatory steps — the only content a buyer sees when they scan the QR code."
               />
             </CardHeader>
             <CardContent>
@@ -221,16 +222,16 @@ export default function BatchDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Phân bổ */}
+          {/* Allocations */}
           <Card>
             <CardHeader className="border-b">
-              <CardTitle>Phân bổ hàng</CardTitle>
+              <CardTitle>Allocations</CardTitle>
             </CardHeader>
             <CardContent>
               {batchAllocs.length === 0 ? (
                 <EmptyState
-                  title="Chưa phân bổ"
-                  hint="Bán hàng phân bổ lô con cho đơn hàng hoặc kênh bán."
+                  title="Nothing allocated"
+                  hint="Sales allocates sub-lots to orders or to a sales channel."
                 />
               ) : (
                 <ul className="flex flex-col gap-2">
@@ -245,7 +246,7 @@ export default function BatchDetailPage() {
                           <p className="font-medium">{a.label}</p>
                           <p className="text-xs text-muted-foreground">
                             {GRADE_LABEL[a.grade]} · {a.createdBy}
-                            {order ? ` · đơn ${order.id}` : ""}
+                            {order ? ` · order ${order.id}` : ""}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -260,11 +261,11 @@ export default function BatchDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Quyết định xử lý hàng dư thừa */}
+          {/* Surplus decision cases */}
           {batchCases.length > 0 ? (
             <Card>
               <CardHeader className="border-b">
-                <CardTitle>Quyết định xử lý</CardTitle>
+                <CardTitle>Decision cases</CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="flex flex-col gap-2 text-sm">
@@ -279,14 +280,14 @@ export default function BatchDetailPage() {
                       >
                         <p className="flex flex-wrap items-center gap-2 font-medium">
                           <GradeTag grade={c.grade} />
-                          {kg(c.unallocatedKg)} chưa phân bổ
+                          {kg(c.unallocatedKg)} unallocated
                         </p>
                         <p className="mt-1 text-muted-foreground">
                           {chosen
-                            ? `Đã chốt: ${chosen.label} · giá trị ròng dự kiến ${vndShort(
+                            ? `Decided: ${chosen.label} · expected value ${vndShort(
                                 chosen.netValue
                               )} · ${c.decidedBy}`
-                            : "Đang chờ Quản lý chọn phương án."}
+                            : "Waiting for the Manager to choose an option."}
                         </p>
                       </li>
                     );
@@ -294,7 +295,7 @@ export default function BatchDetailPage() {
                 </ul>
                 <Button variant="outline" size="sm" className="mt-3" asChild>
                   <Link href="/manager">
-                    Mở Phòng quyết định <ExternalLink className="size-3" />
+                    Open the Decision Room <ExternalLink className="size-3" />
                   </Link>
                 </Button>
               </CardContent>
@@ -302,21 +303,21 @@ export default function BatchDetailPage() {
           ) : null}
         </div>
 
-        {/* Cột phải: QR + thông tin lô */}
+        {/* Right column: QR code and batch details */}
         <div className="flex flex-col gap-4">
           <Card>
             <CardHeader className="border-b">
-              <CardTitle>Mã QR của lô</CardTitle>
+              <CardTitle>Batch QR code</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-3">
               <QrCode value={passportUrl} />
               <p className="text-center text-xs text-muted-foreground">
-                Khách mua quét mã chỉ thấy Hộ chiếu Quy trình. Không có giá, không
-                có tồn kho, không có dữ liệu nội bộ.
+                Scanning the code shows a buyer the Process Passport only. No
+                prices, no inventory, no internal data.
               </p>
               <Button variant="outline" className="w-full" asChild>
                 <Link href={`/p/${encodeURIComponent(batch.id)}`} target="_blank">
-                  Mở như khách mua
+                  Open as a buyer
                 </Link>
               </Button>
             </CardContent>
@@ -324,19 +325,19 @@ export default function BatchDetailPage() {
 
           <Card>
             <CardHeader className="border-b">
-              <CardTitle>Thông tin lô</CardTitle>
+              <CardTitle>Batch details</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="divide-y divide-border">
-                <DataRow label="Sản phẩm">
-                  {meta.emoji} {meta.label}
+                <DataRow label="Product">
+                  <ProductLabel product={batch.product} />
                 </DataRow>
-                <DataRow label="Nguồn gốc">{batch.origin}</DataRow>
-                <DataRow label="Thu hoạch">{full(batch.harvestedAt)}</DataRow>
-                <DataRow label="Nhập kho">{full(batch.intakeAt)}</DataRow>
-                <DataRow label="Tổng khối lượng">{kg(batch.totalKg)}</DataRow>
+                <DataRow label="Origin">{batch.origin}</DataRow>
+                <DataRow label="Harvested">{full(batch.harvestedAt)}</DataRow>
+                <DataRow label="Intake">{full(batch.intakeAt)}</DataRow>
+                <DataRow label="Total weight">{kg(batch.totalKg)}</DataRow>
                 {ho ? (
-                  <DataRow label="Lệnh thu hoạch">
+                  <DataRow label="Harvest order">
                     {ho.id} · {kg(ho.pickedKg)}
                   </DataRow>
                 ) : null}
@@ -347,21 +348,21 @@ export default function BatchDetailPage() {
           {batch.outcome ? (
             <Card>
               <CardHeader className="border-b">
-                <CardTitle>Kết quả cuối</CardTitle>
+                <CardTitle>Final result</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="divide-y divide-border">
-                  <DataRow label="Đã xuất">{kg(batch.outcome.shippedKg)}</DataRow>
-                  <DataRow label="Khách chấp nhận">
+                  <DataRow label="Shipped">{kg(batch.outcome.shippedKg)}</DataRow>
+                  <DataRow label="Accepted by buyer">
                     {kg(batch.outcome.acceptedKg)}
                   </DataRow>
-                  <DataRow label="Khách từ chối">
+                  <DataRow label="Rejected by buyer">
                     {kg(batch.outcome.rejectedKg)}
                   </DataRow>
-                  <DataRow label="Doanh thu thực tế">
+                  <DataRow label="Actual revenue">
                     {vnd(batch.outcome.actualRevenue)}
                   </DataRow>
-                  <DataRow label="Đóng lô">{full(batch.outcome.closedAt)}</DataRow>
+                  <DataRow label="Closed">{full(batch.outcome.closedAt)}</DataRow>
                 </div>
               </CardContent>
             </Card>

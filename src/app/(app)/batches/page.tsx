@@ -12,6 +12,7 @@ import { protocolDoneCount } from "@/lib/domain/protocol";
 import { dt, kg } from "@/lib/domain/format";
 import { EmptyState, PageHeader } from "@/components/common/layout-bits";
 import { BatchStatusTag } from "@/components/common/badges";
+import { ProductLabel } from "@/components/common/product-mark";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/field";
@@ -42,9 +43,9 @@ export default function BatchesPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="Lô hàng"
-        title="Lô hàng là đối tượng trung tâm"
-        description="Mọi vai trò cùng nhìn một lô: nguồn gốc, kết quả phân loại, phân bổ, 6 bước quy trình và mã QR Hộ chiếu."
+        eyebrow="Batches"
+        title="The batch is the central object"
+        description="Every role looks at the same batch: origin, grading result, allocations, the six protocol steps and the Process Passport QR code."
       />
 
       <div className="flex flex-col gap-3 sm:flex-row">
@@ -53,7 +54,7 @@ export default function BatchesPage() {
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Tìm theo mã lô, vườn hoặc sản phẩm…"
+            placeholder="Search by batch code, farm or product…"
             className="pl-9"
           />
         </div>
@@ -62,7 +63,7 @@ export default function BatchesPage() {
           onChange={(e) => setStatus(e.target.value as "all" | BatchStatus)}
           className="sm:w-56"
         >
-          <option value="all">Tất cả trạng thái</option>
+          <option value="all">All statuses</option>
           {STATUSES.map((s) => (
             <option key={s} value={s}>
               {BATCH_STATUS_LABEL[s]}
@@ -74,8 +75,8 @@ export default function BatchesPage() {
       {!hydrated ? null : rows.length === 0 ? (
         <EmptyState
           icon={Boxes}
-          title="Không tìm thấy lô nào"
-          hint="Thử xoá bộ lọc hoặc tìm bằng mã lô khác."
+          title="No batches found"
+          hint="Try clearing the filters or searching for a different batch code."
         />
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
@@ -94,8 +95,7 @@ export default function BatchesPage() {
                           {b.id}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {PRODUCTS[b.product].emoji} {PRODUCTS[b.product].label} ·{" "}
-                          {b.origin}
+                          <ProductLabel product={b.product} /> · {b.origin}
                         </p>
                       </div>
                       <BatchStatusTag status={b.status} />
@@ -103,17 +103,17 @@ export default function BatchesPage() {
 
                     <div className="grid grid-cols-3 gap-2 text-sm">
                       <div>
-                        <p className="text-xs text-muted-foreground">Khối lượng</p>
+                        <p className="text-xs text-muted-foreground">Weight</p>
                         <p className="tnum font-medium">{kg(b.totalKg)}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Chưa phân bổ</p>
+                        <p className="text-xs text-muted-foreground">Unallocated</p>
                         <p className="tnum font-medium">
                           {b.qc ? kg(available) : "—"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Quy trình</p>
+                        <p className="text-xs text-muted-foreground">Protocol</p>
                         <p className="tnum font-medium">
                           {protocolDoneCount(b)}/6
                         </p>
@@ -121,8 +121,8 @@ export default function BatchesPage() {
                     </div>
 
                     <p className="text-xs text-muted-foreground">
-                      Thu hoạch {dt(b.harvestedAt)}
-                      {b.qc ? ` · phân loại ${dt(b.qc.confirmedAt)}` : ""}
+                      Harvested {dt(b.harvestedAt)}
+                      {b.qc ? ` · graded ${dt(b.qc.confirmedAt)}` : ""}
                     </p>
                   </CardContent>
                 </Card>

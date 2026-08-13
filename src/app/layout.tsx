@@ -4,17 +4,17 @@ import "./globals.css";
 
 const inter = Inter({
   variable: "--font-sans",
-  subsets: ["latin", "vietnamese"],
+  subsets: ["latin"],
   display: "swap",
 });
 
 export const metadata: Metadata = {
   title: {
-    default: "BioFresh OS — Vận hành sau thu hoạch",
+    default: "BioFresh OS — Post-harvest operations",
     template: "%s · BioFresh OS",
   },
   description:
-    "Hệ thống vận hành cho HTX nông sản: nhu cầu khách mua xuống tới vườn, tồn kho thật cho bán hàng, và phòng quyết định cho hàng dư thừa.",
+    "Operations system for a produce co-operative: buyer requirements carried down to the field, real sellable inventory for Sales, and a Decision Room for surplus.",
 };
 
 export const viewport: Viewport = {
@@ -29,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="vi" className={`${inter.variable} antialiased`}>
+    <html lang="en" className={`${inter.variable} antialiased`}>
       <body className="min-h-dvh bg-background">{children}</body>
     </html>
   );

@@ -22,6 +22,7 @@ import { computeAlerts } from "@/lib/domain/alerts";
 import { dt, kg, untilText, vndShort } from "@/lib/domain/format";
 import { EmptyState, Kpi, PageHeader, SectionTitle } from "@/components/common/layout-bits";
 import { GradeTag } from "@/components/common/badges";
+import { ProductLabel } from "@/components/common/product-mark";
 import { AlertList } from "@/components/common/alert-list";
 import { DecisionCaseCard } from "@/components/manager/decision-case-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,7 +54,8 @@ export default function ManagerPage() {
   const openCases = state.cases.filter((c) => !c.chosenOptionId);
   const decidedCases = state.cases.filter((c) => c.chosenOptionId);
 
-  // Lô con chưa có ca quyết định nhưng đã vượt ngưỡng hoặc sát hạn hành động.
+  // Sub-lots with no open decision case that are over the surplus threshold or
+  // close to their action deadline.
   const needsCase = lots.filter((l) => {
     const has = state.cases.some(
       (c) => c.batchId === l.batchId && c.grade === l.grade && !c.chosenOptionId
@@ -85,36 +87,36 @@ export default function ManagerPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="Trung tâm điều hành + Phòng quyết định"
-        title="Hàng dư thừa được quyết trong hôm nay, không để qua đêm"
-        description="Mỗi phương án đều kèm giá trị ròng dự kiến, chi phí thêm, thời gian thu tiền và nguồn số liệu để bạn quyết nhanh mà vẫn giải thích được."
+        eyebrow="Operations Centre + Decision Room"
+        title="Surplus decided today, never left overnight"
+        description="Every option carries its expected value, extra cost, time to cash and data source, so you can decide quickly and still explain the call."
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi
-          label="Chưa phân bổ"
+          label="Unallocated"
           value={hydrated ? kg(surplusKg) : "—"}
-          sub={`${lots.length} lô con`}
+          sub={`${lots.length} sub-lots`}
           tone="sun"
           icon={PackageX}
         />
         <Kpi
-          label="Tiền đang có nguy cơ"
+          label="Value at risk"
           value={hydrated ? vndShort(atRisk) : "—"}
-          sub="Giá tham chiếu nội bộ"
+          sub="Internal reference price"
           tone="risk"
           icon={Coins}
         />
         <Kpi
-          label="Đơn đang rủi ro"
+          label="Orders at risk"
           value={hydrated ? riskyOrders.length : "—"}
-          sub={`thiếu ${kg(riskyOrders.reduce((s, c) => s + c.shortageKg, 0))}`}
+          sub={`${kg(riskyOrders.reduce((s, c) => s + c.shortageKg, 0))} short`}
           icon={TriangleAlert}
         />
         <Kpi
-          label="Ca chờ quyết định"
+          label="Cases awaiting a decision"
           value={hydrated ? openCases.length + needsCase.length : "—"}
-          sub={`${decidedCases.length} ca đã chốt`}
+          sub={`${decidedCases.length} already decided`}
           tone="leaf"
           icon={ClipboardList}
         />
@@ -126,11 +128,17 @@ export default function ManagerPage() {
         options={[
           {
             value: "decisions",
-            label: "Phòng quyết định",
+            label: "Decision Room",
             badge: openCases.length + needsCase.length,
           },
-          { value: "ops", label: "Điều hành", badge: alerts.length },
-          { value: "config", label: "Cấu hình" },
+          {
+            value: "ops",
+            label: "Operations",
+            badge: alerts.length,
+            // Alert count, not a plain total — it should read as something to act on.
+            badgeTone: "risk" as const,
+          },
+          { value: "config", label: "Configuration" },
         ]}
       />
 
@@ -140,10 +148,10 @@ export default function ManagerPage() {
             <Card>
               <CardHeader className="border-b">
                 <SectionTitle
-                  title="Cần mở ca quyết định"
-                  hint={`Vượt ngưỡng ${kg(
+                  title="Decision cases to open"
+                  hint={`Over the ${kg(
                     state.config.surplusThresholdKg
-                  )} hoặc sát hạn hành động.`}
+                  )} threshold, or close to the action deadline.`}
                 />
               </CardHeader>
               <CardContent>
@@ -174,8 +182,8 @@ export default function ManagerPage() {
                             <GradeTag grade={l.grade} />
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {PRODUCTS[l.product].emoji} {PRODUCTS[l.product].label} ·{" "}
-                            {l.origin} · {kg(l.availableKg)} chưa phân bổ ·{" "}
+                            <ProductLabel product={l.product} /> · {l.origin} ·{" "}
+                            {kg(l.availableKg)} unallocated ·{" "}
                             {now ? untilText(l.actionDeadline, now) : "—"}
                           </p>
                         </div>
@@ -183,11 +191,11 @@ export default function ManagerPage() {
                           onClick={() => {
                             openCase(l.batchId, l.grade);
                             toast(
-                              `Đã mở ca quyết định cho ${l.batchId} · ${l.grade}.`
+                              `Decision case opened for ${l.batchId} · ${l.grade}.`
                             );
                           }}
                         >
-                          Mở ca quyết định
+                          Open decision case
                         </Button>
                       </li>
                     );
@@ -200,8 +208,8 @@ export default function ManagerPage() {
           {!hydrated ? null : openCases.length === 0 && needsCase.length === 0 ? (
             <EmptyState
               icon={ClipboardList}
-              title="Không có hàng dư thừa cần quyết"
-              hint="Mọi khối lượng đã kiểm soát chất lượng đều đã có đầu ra."
+              title="No surplus to decide on"
+              hint="Every quality-checked quantity already has a destination."
             />
           ) : null}
 
@@ -212,8 +220,8 @@ export default function ManagerPage() {
           {decidedCases.length > 0 ? (
             <>
               <SectionTitle
-                title="Ca đã quyết định"
-                hint="Theo dõi việc cần làm của từng bộ phận."
+                title="Decided cases"
+                hint="Track the follow-up tasks owned by each role."
               />
               {decidedCases.map((c) => (
                 <DecisionCaseCard key={c.id} kase={c} now={now} />
@@ -227,7 +235,7 @@ export default function ManagerPage() {
         <div className="grid gap-4 lg:grid-cols-5">
           <Card className="lg:col-span-3">
             <CardHeader className="border-b">
-              <CardTitle>Cảnh báo cần bạn xử lý</CardTitle>
+              <CardTitle>Alerts that need you</CardTitle>
             </CardHeader>
             <CardContent>
               {hydrated ? <AlertList alerts={alerts} /> : null}
@@ -237,7 +245,7 @@ export default function ManagerPage() {
           <div className="flex flex-col gap-4 lg:col-span-2">
             <Card>
               <CardHeader className="border-b">
-                <CardTitle>Đơn đã chốt và độ phủ hàng</CardTitle>
+                <CardTitle>Confirmed orders and coverage</CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="flex flex-col gap-2.5 text-sm">
@@ -248,7 +256,7 @@ export default function ManagerPage() {
                           {c.order.buyerName}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {c.order.id} · hạn {dt(c.order.dueDate)}
+                          {c.order.id} · due {dt(c.order.dueDate)}
                         </span>
                       </span>
                       <span className="tnum shrink-0 text-right">
@@ -263,8 +271,8 @@ export default function ManagerPage() {
                           }
                         >
                           {c.shortageKg > 0
-                            ? `thiếu ${kg(c.shortageKg)}`
-                            : "đủ hàng"}
+                            ? `${kg(c.shortageKg)} short`
+                            : "fully covered"}
                         </span>
                       </span>
                     </li>
@@ -275,7 +283,7 @@ export default function ManagerPage() {
 
             <Card>
               <CardHeader className="border-b">
-                <CardTitle>Nhật ký vận hành</CardTitle>
+                <CardTitle>Operations log</CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="flex flex-col gap-3">
@@ -307,8 +315,8 @@ export default function ManagerPage() {
 }
 
 /**
- * Ngưỡng cấu hình của HTX. Gắn lại theo key mỗi khi cấu hình đổi để ô nhập
- * luôn khởi tạo từ giá trị đang lưu.
+ * Co-op configuration thresholds. Remounted by key whenever the configuration
+ * changes, so the inputs always start from the stored values.
  */
 function ConfigPanel() {
   const config = useBio((s) => s.config);
@@ -326,15 +334,15 @@ function ConfigPanel() {
       <CardHeader className="border-b">
         <SectionTitle
           icon={Settings2}
-          title="Cấu hình HTX"
-          hint="Phiên bản đầu dùng ngưỡng do người vận hành đặt, không dùng mô hình dự báo thời gian tươi còn lại."
+          title="Co-op configuration"
+          hint="This release uses thresholds set by the operator, not a remaining-freshness forecasting model."
         />
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
-            label="Ngưỡng hàng dư thừa (kg)"
-            hint="Khối lượng chưa phân bổ vượt mức này sẽ vào Phòng quyết định."
+            label="Surplus threshold (kg)"
+            hint="Unallocated quantities above this level open a case in the Decision Room."
           >
             <Input
               type="number"
@@ -344,8 +352,8 @@ function ConfigPanel() {
             />
           </Field>
           <Field
-            label="Coi là khẩn cấp khi còn dưới (giờ)"
-            hint="So với hạn phải hành động của từng lô con."
+            label="Treat as urgent within (hours)"
+            hint="Measured against each sub-lot's action deadline."
           >
             <Input
               type="number"
@@ -362,26 +370,23 @@ function ConfigPanel() {
                 surplusThresholdKg: Math.max(1, Number(threshold) || 1),
                 urgentWithinHours: Math.max(1, Number(urgentHours) || 1),
               });
-              toast("Đã lưu cấu hình — cảnh báo sẽ tính lại theo ngưỡng mới.");
+              toast("Configuration saved — alerts will recalculate on the new thresholds.");
             }}
           >
-            Lưu cấu hình
+            Save configuration
           </Button>
         </div>
 
         <div className="rounded-xl bg-muted/50 p-4 text-sm">
           <p className="flex items-center gap-2 font-medium">
-            <Gauge className="size-4 text-leaf-600" /> Cửa sổ hành động theo sản
-            phẩm
+            <Gauge className="size-4 text-leaf-600" /> Action window by product
           </p>
           <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
             {Object.values(PRODUCTS).map((p) => (
               <li key={p.key} className="tnum flex justify-between gap-2">
-                <span>
-                  {p.emoji} {p.label}
-                </span>
+                <ProductLabel product={p.key} />
                 <span className="text-muted-foreground">
-                  {p.actionWindowHours} giờ sau kiểm soát chất lượng
+                  {p.actionWindowHours} hours after quality control
                 </span>
               </li>
             ))}

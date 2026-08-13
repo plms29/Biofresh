@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# design skill installed via `npx ui-ux-pro-max-cli init --ai claude` — reinstallable, not source
+/.claude/skills/
+/design-system/

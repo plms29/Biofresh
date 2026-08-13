@@ -10,8 +10,8 @@ import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 /**
- * Ghi nhận 6 bước Quy trình Thực địa BioFresh theo đúng thứ tự.
- * Quy tắc: chưa đủ 6 bước thì không được đánh dấu hoàn tất xử lý.
+ * Logs the six steps of the BioFresh Field Protocol in order.
+ * Rule: handling cannot be marked complete until all six steps are recorded.
  */
 export function ProtocolTracker({
   batch,
@@ -73,10 +73,10 @@ export function ProtocolTracker({
                   disabled={locked}
                   onClick={() => {
                     logProtocolStep(batch.id, def.key);
-                    toast(`Đã ghi nhận bước "${def.label}" cho lô ${batch.id}.`);
+                    toast(`Step "${def.label}" logged for batch ${batch.id}.`);
                   }}
                 >
-                  {locked ? <Lock className="size-3.5" /> : "Ghi nhận"}
+                  {locked ? <Lock className="size-3.5" /> : "Log step"}
                 </Button>
               )}
             </li>
@@ -85,12 +85,13 @@ export function ProtocolTracker({
       </ol>
       {!complete ? (
         <p className="text-xs text-muted-foreground">
-          Còn {6 - batch.protocol.filter((p) => p.status === "done").length} bước
-          bắt buộc. Hộ chiếu Quy trình chỉ hiển thị “Đã hoàn tất” khi đủ 6 bước.
+          {6 - batch.protocol.filter((p) => p.status === "done").length} mandatory
+          steps left. The Process Passport only reads “Complete” once all six are
+          recorded.
         </p>
       ) : (
         <p className="text-xs font-medium text-leaf-700">
-          Đủ 6 bước — Hộ chiếu Quy trình của lô đã ở trạng thái hoàn tất.
+          All six steps recorded — this batch&rsquo;s Process Passport is now complete.
         </p>
       )}
     </div>

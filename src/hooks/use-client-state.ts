@@ -6,8 +6,9 @@ import { useBio } from "@/store/use-biofresh";
 const noopSubscribe = () => () => {};
 
 /**
- * Cho biết đã gắn vào DOM chưa. Dữ liệu nằm ở localStorage nên phần phụ thuộc
- * dữ liệu chỉ được vẽ sau khi hydrate, tránh lệch giữa máy chủ và trình duyệt.
+ * Reports whether the component has mounted. State lives in localStorage, so
+ * anything that depends on it renders only after hydration — that keeps the
+ * server and browser output identical.
  */
 export function useHydrated(): boolean {
   return React.useSyncExternalStore(
@@ -17,7 +18,7 @@ export function useHydrated(): boolean {
   );
 }
 
-/** Đồng hồ dùng chung cho mọi phép tính "còn bao lâu", nhịp một phút. */
+/** One shared clock for every "time remaining" calculation, ticking once a minute. */
 const clock = {
   now: 0,
   listeners: new Set<() => void>(),
@@ -41,7 +42,7 @@ const clock = {
   },
 };
 
-/** Trả về 0 trước khi hydrate — mọi nơi dùng giá trị này đều xử lý mốc 0. */
+/** Returns 0 before hydration — every caller handles the 0 case explicitly. */
 export function useNow(): number {
   return React.useSyncExternalStore(
     clock.subscribe,
@@ -50,7 +51,7 @@ export function useNow(): number {
   );
 }
 
-/** Nạp dữ liệu trình diễn lần đầu (chạy trên máy người dùng, không cần máy chủ). */
+/** Loads the demo dataset on first run (client-side only — no server needed). */
 export function useSeed() {
   const ensureSeeded = useBio((s) => s.ensureSeeded);
   React.useEffect(() => {

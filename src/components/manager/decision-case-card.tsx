@@ -8,7 +8,6 @@ import {
   type DecisionCase,
   type DecisionOption,
 } from "@/types";
-import { PRODUCTS } from "@/lib/domain/catalog";
 import {
   expectedValue,
   explainOption,
@@ -17,6 +16,7 @@ import {
 import { kg, untilText, vnd, vndShort } from "@/lib/domain/format";
 import { useBio } from "@/store/use-biofresh";
 import { GradeTag, UrgencyTag } from "@/components/common/badges";
+import { ProductLabel } from "@/components/common/product-mark";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
@@ -61,10 +61,15 @@ export function DecisionCaseCard({
               <GradeTag grade={kase.grade} />
               <UrgencyTag urgency={kase.urgency} />
             </CardTitle>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {batch
-                ? `${PRODUCTS[batch.product].emoji} ${PRODUCTS[batch.product].label} · ${batch.origin}`
-                : kase.batchId}
+            <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+              {batch ? (
+                <>
+                  <ProductLabel product={batch.product} />
+                  <span>· {batch.origin}</span>
+                </>
+              ) : (
+                kase.batchId
+              )}
             </p>
           </div>
           <div className="text-right">
@@ -72,7 +77,7 @@ export function DecisionCaseCard({
               {kg(kase.unallocatedKg)}
             </p>
             <p className="text-xs text-muted-foreground">
-              {chosen ? "đã xử lý theo quyết định" : "chưa phân bổ"}
+              {chosen ? "covered by the decision" : "unallocated"}
             </p>
             {chosen ? null : (
               <p
@@ -83,7 +88,7 @@ export function DecisionCaseCard({
                     : "text-muted-foreground"
                 )}
               >
-                hạn hành động {now ? untilText(kase.actionDeadline, now) : "—"}
+                action deadline · {now ? untilText(kase.actionDeadline, now) : "—"}
               </p>
             )}
           </div>
@@ -94,15 +99,15 @@ export function DecisionCaseCard({
         {chosen ? (
           <div className="rounded-xl bg-leaf-50 p-4 ring-1 ring-leaf-200">
             <p className="flex items-center gap-2 font-medium text-leaf-800">
-              <CheckCircle2 className="size-4" /> Đã chốt: {chosen.label}
+              <CheckCircle2 className="size-4" /> Decided: {chosen.label}
             </p>
             <p className="tnum mt-1 text-sm text-leaf-900/80">
-              Giá trị ròng dự kiến {vnd(chosen.netValue)} · thu tiền sau{" "}
-              {chosen.cashInDays} ngày · {kase.decidedBy}
+              Expected net value {vnd(chosen.netValue)} · cash in{" "}
+              {chosen.cashInDays} days · {kase.decidedBy}
             </p>
             <div className="mt-3">
               <p className="text-xs font-semibold tracking-wide text-leaf-700 uppercase">
-                Việc cần làm
+                Follow-up tasks
               </p>
               <ul className="mt-1.5 flex flex-col gap-1.5">
                 {kase.tasks.map((t) => (
@@ -152,15 +157,15 @@ export function DecisionCaseCard({
                   chooseOption(kase.id, selectedId);
                   const opt = kase.options.find((o) => o.id === selectedId);
                   toast(
-                    `Đã chốt "${opt?.label}" — việc cần làm đã gửi cho các bộ phận.`
+                    `Decided: "${opt?.label}" — the follow-up tasks have been sent to each team.`
                   );
                 }}
               >
-                Chốt phương án đã chọn
+                Confirm selected option
               </Button>
               <p className="text-xs text-muted-foreground">
-                Mọi con số đến từ đơn hàng, tín hiệu thị trường do Bán hàng nhập và
-                giá tham chiếu nội bộ — không có dự báo tự động.
+                Every figure comes from orders, market signals entered by Sales and
+                the internal reference price — there is no automated forecasting.
               </p>
             </div>
           </>
@@ -209,17 +214,17 @@ function OptionRow({
             <span className="font-medium">{option.label}</span>
             {recommended ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-leaf-600 px-2 py-0.5 text-xs font-medium text-white">
-                <Sparkles className="size-3" /> Gợi ý
+                <Sparkles className="size-3" /> Recommended
               </span>
             ) : null}
             <UrgencyTag
               urgency={option.risk}
               label={
                 option.risk === "high"
-                  ? "Rủi ro cao"
+                  ? "High risk"
                   : option.risk === "medium"
-                    ? "Rủi ro vừa"
-                    : "Rủi ro thấp"
+                    ? "Medium risk"
+                    : "Low risk"
               }
             />
           </span>
@@ -232,24 +237,24 @@ function OptionRow({
             {vndShort(expectedValue(option))}
           </span>
           <span className="tnum block text-xs text-muted-foreground">
-            kỳ vọng · ròng {vndShort(option.netValue)}
+            expected · net {vndShort(option.netValue)}
           </span>
           <span className="tnum block text-xs text-muted-foreground">
-            +{vndShort(option.extraCost)} chi phí
+            +{vndShort(option.extraCost)} cost
           </span>
           <span className="tnum block text-xs text-muted-foreground">
-            {option.cashInDays} ngày thu tiền
+            {option.cashInDays} days to cash
           </span>
         </span>
       </button>
 
       <div className="flex items-center justify-between gap-2 border-t border-border/70 px-4 py-2">
         <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-          Khả năng thực hiện {Math.round(option.certainty * 100)}% · Nguồn:{" "}
+          Confidence {Math.round(option.certainty * 100)}% · Source:{" "}
           {option.basis}
         </p>
         <Button size="xs" variant="ghost" onClick={onExplain}>
-          <Info className="size-3" /> Giải thích
+          <Info className="size-3" /> Explain
           <ChevronDown
             className={cn(
               "size-3 transition-transform",

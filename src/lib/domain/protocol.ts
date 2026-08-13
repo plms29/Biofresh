@@ -1,6 +1,6 @@
 import type { Batch, ProtocolStep, ProtocolStepKey } from "@/types";
 
-/** 6 bước bắt buộc của Quy trình Thực địa BioFresh. */
+/** The six mandatory steps of the BioFresh Field Protocol. */
 export const PROTOCOL_STEPS: {
   key: ProtocolStepKey;
   label: string;
@@ -8,33 +8,33 @@ export const PROTOCOL_STEPS: {
 }[] = [
   {
     key: "sort",
-    label: "Phân loại",
-    hint: "Loại bỏ trái dập, nứt, nấm trước khi xử lý.",
+    label: "Sorting",
+    hint: "Remove bruised, split or mouldy fruit before treatment.",
   },
   {
     key: "solution",
-    label: "Chuẩn bị dung dịch",
-    hint: "Pha dung dịch bảo quản đúng tỉ lệ, ghi lại mẻ pha.",
+    label: "Solution prep",
+    hint: "Mix the preservation solution to ratio and record the batch mixed.",
   },
   {
     key: "dip",
-    label: "Nhúng / Phun",
-    hint: "Nhúng hoặc phun đều toàn bộ bề mặt trái.",
+    label: "Dip / Spray",
+    hint: "Dip or spray evenly across the whole surface of the fruit.",
   },
   {
     key: "dry",
-    label: "Làm khô",
-    hint: "Làm khô hoàn toàn trước khi đóng gói, tránh đọng nước.",
+    label: "Drying",
+    hint: "Dry completely before packing so no moisture is trapped.",
   },
   {
     key: "pack",
-    label: "Đóng gói",
-    hint: "Đóng gói theo quy cách khách mua, dán mã lô.",
+    label: "Packing",
+    hint: "Pack to the buyer's specification and apply the batch code.",
   },
   {
     key: "sync",
-    label: "Đồng bộ dữ liệu",
-    hint: "Đồng bộ dữ liệu lô lên hệ thống để mở Hộ chiếu Quy trình.",
+    label: "Data sync",
+    hint: "Sync batch data to the system to publish the Process Passport.",
   },
 ];
 
@@ -54,7 +54,7 @@ export function isProtocolComplete(batch: Batch): boolean {
   return protocolDoneCount(batch) === PROTOCOL_STEPS.length;
 }
 
-/** Bước kế tiếp cần ghi nhận (theo đúng thứ tự quy trình). */
+/** The next step to record, following the protocol order. */
 export function nextProtocolStep(batch: Batch): ProtocolStep | undefined {
   for (const def of PROTOCOL_STEPS) {
     const step = batch.protocol.find((s) => s.key === def.key);

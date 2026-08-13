@@ -32,8 +32,8 @@ function isoDateInput(offsetDays: number) {
 }
 
 /**
- * Nhập đơn hàng / yêu cầu khách mua. Khách mua không dùng hệ thống —
- * Bán hàng gõ lại thông tin nhận qua Zalo, thư điện tử, điện thoại.
+ * Records an order / buyer request. Buyers are not users of the system —
+ * Sales re-keys whatever arrives by Zalo, email or phone.
  */
 export function OrderFormModal({
   open,
@@ -42,14 +42,14 @@ export function OrderFormModal({
 }: {
   open: boolean;
   onClose: () => void;
-  /** Khi truyền vào: chỉ sửa tiêu chuẩn của đơn hiện có. */
+  /** When provided, the form only edits the specification of an existing order. */
   editing?: Order;
 }) {
   const addOrder = useBio((s) => s.addOrder);
   const updateOrderSpec = useBio((s) => s.updateOrderSpec);
   const { toast } = useToast();
 
-  // Hộp thoại được gắn lại (theo key) mỗi lần mở nên khởi tạo trực tiếp từ đơn đang sửa.
+  // The modal remounts (by key) on every open, so state is seeded from the order being edited.
   const [buyerName, setBuyerName] = React.useState(editing?.buyerName ?? "");
   const [product, setProduct] = React.useState<ProductKey>(
     editing?.product ?? "strawberry"
@@ -100,21 +100,21 @@ export function OrderFormModal({
     rejectNotes: rejectNotes || undefined,
   };
 
-  // Xem trước đúng thứ mà ngoài vườn sẽ nhận được.
+  // Preview exactly what the field team will receive.
   const preview = buildPickingGuide(product, spec, 0, buyerName || undefined);
 
   const submit = () => {
     if (editing) {
       updateOrderSpec(editing.id, spec);
       toast(
-        `Đã cập nhật tiêu chuẩn ${editing.id} — hướng dẫn hái ngoài vườn đã đồng bộ.`
+        `Specification for ${editing.id} updated — the field picking guide is in sync.`
       );
       onClose();
       return;
     }
-    if (!buyerName.trim()) return setError("Nhập tên khách mua.");
+    if (!buyerName.trim()) return setError("Enter the buyer's name.");
     const qty = Number(qtyKg);
-    if (!qty || qty <= 0) return setError("Số lượng phải lớn hơn 0.");
+    if (!qty || qty <= 0) return setError("Quantity must be greater than 0.");
 
     const input: NewOrderInput = {
       buyerName: buyerName.trim(),
@@ -133,8 +133,8 @@ export function OrderFormModal({
     const id = addOrder(input);
     toast(
       createHo
-        ? `Đã nhập đơn ${id} và tạo lệnh thu hoạch cho ngoài vườn.`
-        : `Đã nhập đơn ${id}.`
+        ? `Order ${id} recorded and a harvest order raised for the field team.`
+        : `Order ${id} recorded.`
     );
     onClose();
   };
@@ -144,19 +144,19 @@ export function OrderFormModal({
       open={open}
       onClose={onClose}
       className="sm:max-w-2xl"
-      title={editing ? `Cập nhật tiêu chuẩn ${editing.id}` : "Nhập đơn hàng mới"}
+      title={editing ? `Update specification ${editing.id}` : "New order"}
       description={
         editing
-          ? "Sửa tiêu chuẩn sẽ tự cập nhật hướng dẫn hái và thông báo cho ngoài vườn."
-          : "Ghi lại yêu cầu khách mua gửi qua Zalo, thư điện tử hoặc điện thoại."
+          ? "Editing the specification updates the picking guide and notifies the field team."
+          : "Record the buyer request received by Zalo, email or phone."
       }
       footer={
         <>
           <Button variant="outline" size="lg" onClick={onClose}>
-            Huỷ
+            Cancel
           </Button>
           <Button size="lg" onClick={submit}>
-            {editing ? "Lưu tiêu chuẩn" : "Lưu đơn hàng"}
+            {editing ? "Save specification" : "Save order"}
           </Button>
         </>
       }
@@ -170,14 +170,14 @@ export function OrderFormModal({
 
         {!editing ? (
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Khách mua">
+            <Field label="Buyer">
               <Input
                 value={buyerName}
                 onChange={(e) => setBuyerName(e.target.value)}
-                placeholder="Siêu thị FreshMart"
+                placeholder="FreshMart Supermarket"
               />
             </Field>
-            <Field label="Nguồn thông tin">
+            <Field label="Source">
               <Select
                 value={source}
                 onChange={(e) => setSource(e.target.value as OrderChannel)}
@@ -189,19 +189,19 @@ export function OrderFormModal({
                 ))}
               </Select>
             </Field>
-            <Field label="Sản phẩm">
+            <Field label="Product">
               <Select
                 value={product}
                 onChange={(e) => setProduct(e.target.value as ProductKey)}
               >
                 {PRODUCT_KEYS.map((p) => (
                   <option key={p} value={p}>
-                    {PRODUCTS[p].emoji} {PRODUCTS[p].label}
+                    {PRODUCTS[p].label}
                   </option>
                 ))}
               </Select>
             </Field>
-            <Field label="Số lượng (kg)">
+            <Field label="Quantity (kg)">
               <Input
                 type="number"
                 inputMode="decimal"
@@ -209,14 +209,17 @@ export function OrderFormModal({
                 onChange={(e) => setQtyKg(e.target.value)}
               />
             </Field>
-            <Field label="Hạn giao">
+            <Field label="Delivery due">
               <Input
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
               />
             </Field>
-            <Field label="Giá chào (VND/kg)" hint="Để trống nếu chưa chốt giá.">
+            <Field
+              label="Offered price (VND/kg)"
+              hint="Leave empty if the price is not agreed yet."
+            >
               <Input
                 type="number"
                 inputMode="numeric"
@@ -225,7 +228,7 @@ export function OrderFormModal({
                 placeholder="165000"
               />
             </Field>
-            <Field label="Kênh bán">
+            <Field label="Sales channel">
               <Select
                 value={salesChannel}
                 onChange={(e) => setSalesChannel(e.target.value as SalesChannel)}
@@ -237,13 +240,13 @@ export function OrderFormModal({
                 ))}
               </Select>
             </Field>
-            <Field label="Trạng thái">
+            <Field label="Status">
               <Select
                 value={confirmed ? "confirmed" : "draft"}
                 onChange={(e) => setConfirmed(e.target.value === "confirmed")}
               >
-                <option value="confirmed">Đã chốt với khách mua</option>
-                <option value="draft">Nháp — chờ xác nhận</option>
+                <option value="confirmed">Confirmed with the buyer</option>
+                <option value="draft">Draft — awaiting confirmation</option>
               </Select>
             </Field>
           </div>
@@ -251,10 +254,10 @@ export function OrderFormModal({
 
         <div className="rounded-xl bg-muted/60 p-4">
           <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-            Tiêu chuẩn khách mua
+            Buyer specification
           </p>
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
-            <Field label="Hạng yêu cầu">
+            <Field label="Required grade">
               <Select
                 value={grade}
                 onChange={(e) => setGrade(e.target.value as Grade)}
@@ -266,7 +269,7 @@ export function OrderFormModal({
                 ))}
               </Select>
             </Field>
-            <Field label="Độ ngọt tối thiểu (Brix)">
+            <Field label="Minimum sweetness (Brix)">
               <Input
                 type="number"
                 inputMode="decimal"
@@ -275,7 +278,7 @@ export function OrderFormModal({
                 placeholder="9"
               />
             </Field>
-            <Field label="Kích thước nhỏ nhất (mm)">
+            <Field label="Minimum size (mm)">
               <Input
                 type="number"
                 inputMode="numeric"
@@ -284,7 +287,7 @@ export function OrderFormModal({
                 placeholder="28"
               />
             </Field>
-            <Field label="Kích thước lớn nhất (mm)">
+            <Field label="Maximum size (mm)">
               <Input
                 type="number"
                 inputMode="numeric"
@@ -293,18 +296,18 @@ export function OrderFormModal({
                 placeholder="40"
               />
             </Field>
-            <Field label="Yêu cầu màu / độ chín" className="sm:col-span-2">
+            <Field label="Colour / ripeness requirement" className="sm:col-span-2">
               <Input
                 value={colorNote}
                 onChange={(e) => setColorNote(e.target.value)}
-                placeholder="Đỏ đều từ vai xuống chóp, cuống còn tươi"
+                placeholder="Even red from shoulder to tip, stem still fresh"
               />
             </Field>
-            <Field label="Khách mua từ chối" className="sm:col-span-2">
+            <Field label="Buyer rejects" className="sm:col-span-2">
               <Input
                 value={rejectNotes}
                 onChange={(e) => setRejectNotes(e.target.value)}
-                placeholder="trái dập, đốm nấm trắng, cuống khô"
+                placeholder="bruised fruit, white mould spots, dried stems"
               />
             </Field>
           </div>
@@ -320,26 +323,26 @@ export function OrderFormModal({
                 className="mt-0.5 size-4 accent-leaf-600"
               />
               <span>
-                Tạo luôn lệnh thu hoạch cho ngoài vườn
+                Raise a harvest order for the field team straight away
                 <span className="block text-xs text-muted-foreground">
-                  Mục tiêu hái = số lượng đơn + 15% bù hao hụt phân loại.
+                  Picking target = order quantity + 15% to cover grading losses.
                 </span>
               </span>
             </label>
             {createHo ? (
-              <Field label="Vườn / nông hộ">
+              <Field label="Plot / farm household">
                 <Input
                   value={farm}
                   onChange={(e) => setFarm(e.target.value)}
-                  placeholder="Vườn A2 — hộ ông Tuấn"
+                  placeholder="Plot A2 — Tuan household"
                 />
               </Field>
             ) : null}
-            <Field label="Ghi chú nội bộ">
+            <Field label="Internal notes">
               <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Giao 2 chuyến, thùng 500 g có nắp…"
+                placeholder="Deliver in 2 runs, 500 g lidded punnets…"
               />
             </Field>
           </div>
@@ -347,7 +350,7 @@ export function OrderFormModal({
 
         <div className="rounded-xl bg-leaf-50 p-4 ring-1 ring-leaf-200">
           <p className="text-xs font-semibold tracking-wide text-leaf-700 uppercase">
-            Ngoài vườn sẽ thấy
+            What the field team will see
           </p>
           <p className="mt-2 font-heading text-sm font-semibold">
             {preview.headline}

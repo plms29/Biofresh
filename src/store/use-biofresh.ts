@@ -25,12 +25,12 @@ import { emptyProtocol, isProtocolComplete } from "@/lib/domain/protocol";
 import { batchLots } from "@/lib/domain/inventory";
 import { buildDecisionCase, tasksForOption } from "@/lib/domain/decisions";
 
-/** Người dùng đang đăng nhập theo vai trò — bản demo không có xác thực. */
+/** The signed-in user for each role — the demo has no authentication. */
 const ACTOR: Record<Role, string> = {
-  sales: "Bán hàng — Trang",
-  field: "Ngoài vườn — chú Hùng",
-  packhouse: "Kho — Nhung",
-  manager: "Quản lý — anh Dũng",
+  sales: "Sales — Trang",
+  field: "Field — Mr Hung",
+  packhouse: "Packhouse — Nhung",
+  manager: "Manager — Mr Dung",
 };
 
 export interface ActivityEntry {
@@ -65,7 +65,7 @@ export interface NewOrderInput {
   source: Order["source"];
   notes?: string;
   status: "draft" | "confirmed";
-  /** Tạo luôn lệnh thu hoạch cho đơn này. */
+  /** Also create a harvest order for this order straight away. */
   createHarvestOrder: boolean;
   farm?: string;
 }
@@ -75,7 +75,7 @@ interface Actions {
   resetDemo: () => void;
   setRole: (role: Role) => void;
 
-  // Bán hàng
+  // Sales
   addOrder: (input: NewOrderInput) => string;
   updateOrderSpec: (orderId: string, spec: BuyerSpec) => void;
   setOrderStatus: (orderId: string, status: Order["status"]) => void;
@@ -93,13 +93,13 @@ interface Actions {
   removeAllocation: (allocationId: string) => void;
   confirmAllocation: (allocationId: string) => void;
 
-  // Ngoài vườn
+  // Field
   startHarvest: (harvestOrderId: string) => void;
   updatePicked: (harvestOrderId: string, pickedKg: number) => void;
   reportIncident: (harvestOrderId: string, note: string) => void;
   finishHarvest: (harvestOrderId: string) => string;
 
-  // Kho đóng gói / Kiểm soát chất lượng
+  // Packhouse / Quality Control
   confirmIntake: (batchId: string, totalKg: number) => void;
   saveQc: (
     batchId: string,
@@ -119,7 +119,7 @@ interface Actions {
     outcome: Omit<BatchOutcome, "closedAt">
   ) => void;
 
-  // Quản lý / Phòng quyết định
+  // Manager / Decision Room
   openCase: (batchId: string, grade: Grade) => void;
   refreshCases: () => void;
   chooseOption: (caseId: string, optionId: string) => void;
@@ -133,7 +133,7 @@ const emptyState: State = {
   seeded: false,
   role: "sales",
   config: {
-    coopName: "HTX Nông sản Đà Lạt Xanh",
+    coopName: "Da Lat Green Produce Co-operative",
     surplusThresholdKg: 80,
     urgentWithinHours: 12,
   },
@@ -182,7 +182,7 @@ export const useBio = create<BioStore>()(
               at: nowIso(),
               role: "manager",
               actor: ACTOR.manager,
-              text: "Khởi tạo dữ liệu trình diễn cho HTX.",
+              text: "Demonstration data created for the co-operative.",
             },
           ],
         });
@@ -201,7 +201,7 @@ export const useBio = create<BioStore>()(
               at: nowIso(),
               role: get().role,
               actor: ACTOR[get().role],
-              text: "Đặt lại dữ liệu trình diễn.",
+              text: "Demonstration data reset.",
             },
           ],
         });
@@ -209,7 +209,7 @@ export const useBio = create<BioStore>()(
 
       setRole: (role) => set({ role }),
 
-      // ---------------- Bán hàng ----------------
+      // ---------------- Sales ----------------
 
       addOrder: (input) => {
         const id = `DH-${1046 + get().orders.length}`;
@@ -230,7 +230,11 @@ export const useBio = create<BioStore>()(
           specRevisions: 0,
         };
         set((s) => ({ orders: [order, ...s.orders] }));
-        log(set, "sales", `Nhập đơn ${id} — ${input.buyerName}, ${input.qtyKg} kg.`);
+        log(
+          set,
+          "sales",
+          `Order ${id} entered — ${input.buyerName}, ${input.qtyKg} kg.`
+        );
 
         if (input.createHarvestOrder) {
           const hoId = `LTH-${503 + get().harvestOrders.length}`;
@@ -238,7 +242,7 @@ export const useBio = create<BioStore>()(
             id: hoId,
             product: input.product,
             targetKg: Math.round(input.qtyKg * 1.15),
-            farm: input.farm?.trim() || "Chưa phân vườn",
+            farm: input.farm?.trim() || "No plot assigned",
             deadline: input.dueDate,
             orderId: id,
             guide: buildPickingGuide(
@@ -256,7 +260,7 @@ export const useBio = create<BioStore>()(
           log(
             set,
             "sales",
-            `Tạo lệnh thu hoạch ${hoId} (${ho.targetKg} kg mục tiêu) cho đơn ${id}.`
+            `Harvest order ${hoId} created (target ${ho.targetKg} kg) for order ${id}.`
           );
         }
         return id;
@@ -272,7 +276,7 @@ export const useBio = create<BioStore>()(
               ? { ...o, spec, specRevisions: revision, updatedAt: nowIso() }
               : o
           ),
-          // Tiêu chuẩn đổi -> mọi hướng dẫn hái liên quan tự cập nhật.
+          // Specification changed -> every related picking guide updates itself.
           harvestOrders: s.harvestOrders.map((h) =>
             h.orderId === orderId && h.status !== "done"
               ? {
@@ -290,7 +294,7 @@ export const useBio = create<BioStore>()(
         log(
           set,
           "sales",
-          `Cập nhật tiêu chuẩn đơn ${orderId} (lần ${revision}) — hướng dẫn hái đã đồng bộ.`
+          `Specification for order ${orderId} updated (revision ${revision}) — picking guide synced.`
         );
       },
 
@@ -300,7 +304,7 @@ export const useBio = create<BioStore>()(
             o.id === orderId ? { ...o, status, updatedAt: nowIso() } : o
           ),
         }));
-        log(set, "sales", `Đơn ${orderId} chuyển trạng thái ${status}.`);
+        log(set, "sales", `Order ${orderId} moved to status ${status}.`);
       },
 
       addSignal: (input) => {
@@ -314,7 +318,7 @@ export const useBio = create<BioStore>()(
         log(
           set,
           "sales",
-          `Nhập tín hiệu thị trường ${signal.id} — ${signal.market}, ${signal.qtyKg} kg.`
+          `Market signal ${signal.id} entered — ${signal.market}, ${signal.qtyKg} kg.`
         );
         get().refreshCases();
       },
@@ -323,16 +327,16 @@ export const useBio = create<BioStore>()(
         const state = get();
         const batch = state.batches.find((b) => b.id === batchId);
         if (!batch?.qc)
-          return { ok: false, message: "Lô chưa có kết quả kiểm soát chất lượng." };
+          return { ok: false, message: "This batch has not been graded yet." };
         const lot = batchLots(batch, state.allocations).find(
           (l) => l.grade === grade
         );
-        if (!lot) return { ok: false, message: "Lô con không tồn tại." };
-        if (kg <= 0) return { ok: false, message: "Số kg phải lớn hơn 0." };
+        if (!lot) return { ok: false, message: "That sub-lot does not exist." };
+        if (kg <= 0) return { ok: false, message: "The weight must be above 0 kg." };
         if (kg > lot.availableKg)
           return {
             ok: false,
-            message: `Chỉ còn ${lot.availableKg} kg khả dụng ở hạng này.`,
+            message: `Only ${lot.availableKg} kg is still available in this grade.`,
           };
 
         const allocation: Allocation = {
@@ -351,10 +355,10 @@ export const useBio = create<BioStore>()(
         log(
           set,
           state.role,
-          `Phân bổ ${kg} kg ${grade} từ lô ${batchId} cho ${label}.`
+          `Allocated ${kg} kg of ${grade} from batch ${batchId} to ${label}.`
         );
         get().refreshCases();
-        return { ok: true, message: `Đã phân bổ ${kg} kg cho ${label}.` };
+        return { ok: true, message: `Allocated ${kg} kg to ${label}.` };
       },
 
       removeAllocation: (allocationId) => {
@@ -366,7 +370,7 @@ export const useBio = create<BioStore>()(
           log(
             set,
             get().role,
-            `Bỏ phân bổ ${a.kg} kg ${a.grade} khỏi ${a.label}.`
+            `Removed the allocation of ${a.kg} kg of ${a.grade} from ${a.label}.`
           );
         get().refreshCases();
       },
@@ -377,10 +381,10 @@ export const useBio = create<BioStore>()(
             a.id === allocationId ? { ...a, status: "confirmed" } : a
           ),
         }));
-        log(set, get().role, `Xác nhận phương án bán cho phân bổ ${allocationId}.`);
+        log(set, get().role, `Allocation ${allocationId} confirmed for sale.`);
       },
 
-      // ---------------- Ngoài vườn ----------------
+      // ---------------- Field ----------------
 
       startHarvest: (harvestOrderId) => {
         set((s) => ({
@@ -390,7 +394,7 @@ export const useBio = create<BioStore>()(
               : h
           ),
         }));
-        log(set, "field", `Bắt đầu lệnh thu hoạch ${harvestOrderId}.`);
+        log(set, "field", `Harvest order ${harvestOrderId} started.`);
       },
 
       updatePicked: (harvestOrderId, pickedKg) => {
@@ -409,7 +413,7 @@ export const useBio = create<BioStore>()(
         log(
           set,
           "field",
-          `Cập nhật sản lượng lệnh ${harvestOrderId}: ${pickedKg} kg.`
+          `Picked weight for harvest order ${harvestOrderId} updated: ${pickedKg} kg.`
         );
       },
 
@@ -432,10 +436,14 @@ export const useBio = create<BioStore>()(
               : h
           ),
         }));
-        log(set, "field", `Báo sự cố lệnh ${harvestOrderId}: ${note}`);
+        log(
+          set,
+          "field",
+          `Incident reported on harvest order ${harvestOrderId}: ${note}`
+        );
       },
 
-      /** Kết thúc lệnh hái -> sinh lô hàng vật lý chờ kho đóng gói nhận. */
+      /** Finishing a harvest order creates the physical batch awaiting packhouse intake. */
       finishHarvest: (harvestOrderId) => {
         const ho = get().harvestOrders.find((h) => h.id === harvestOrderId);
         if (!ho) return "";
@@ -462,12 +470,12 @@ export const useBio = create<BioStore>()(
         log(
           set,
           "field",
-          `Kết thúc lệnh ${harvestOrderId}, chuyển ${ho.pickedKg} kg về kho — lô ${id}.`
+          `Harvest order ${harvestOrderId} finished; ${ho.pickedKg} kg sent to the packhouse as batch ${id}.`
         );
         return id;
       },
 
-      // ---------------- Kho đóng gói / Kiểm soát chất lượng ----------------
+      // ---------------- Packhouse / Quality Control ----------------
 
       confirmIntake: (batchId, totalKg) => {
         set((s) => ({
@@ -484,18 +492,18 @@ export const useBio = create<BioStore>()(
               : b
           ),
         }));
-        log(set, "packhouse", `Xác nhận nhập kho lô ${batchId}: ${totalKg} kg.`);
+        log(set, "packhouse", `Intake confirmed for batch ${batchId}: ${totalKg} kg.`);
       },
 
       saveQc: (batchId, gradeKg, notes, photos) => {
         const batch = get().batches.find((b) => b.id === batchId);
-        if (!batch) return { ok: false, message: "Không tìm thấy lô." };
+        if (!batch) return { ok: false, message: "Batch not found." };
         const sum = (Object.values(gradeKg) as number[]).reduce(
           (a, b) => a + b,
           0
         );
         if (sum <= 0)
-          return { ok: false, message: "Nhập số kg cho ít nhất một hạng." };
+          return { ok: false, message: "Enter a weight for at least one grade." };
         const allocated = get()
           .allocations.filter((a) => a.batchId === batchId)
           .reduce<Record<string, number>>((acc, a) => {
@@ -506,7 +514,7 @@ export const useBio = create<BioStore>()(
           if ((gradeKg[grade as Grade] ?? 0) < kg)
             return {
               ok: false,
-              message: `Hạng ${grade} đã phân bổ ${kg} kg, không thể nhập thấp hơn.`,
+              message: `Grade ${grade} already has ${kg} kg allocated, so a lower figure cannot be entered.`,
             };
         }
 
@@ -532,12 +540,12 @@ export const useBio = create<BioStore>()(
         log(
           set,
           "packhouse",
-          `Xác nhận phân loại lô ${batchId}: A ${gradeKg.A} · B ${gradeKg.B} · chế biến ${gradeKg.PROCESS} · loại ${gradeKg.REJECT} kg.`
+          `Grading confirmed for batch ${batchId}: A ${gradeKg.A} · B ${gradeKg.B} · processing ${gradeKg.PROCESS} · reject ${gradeKg.REJECT} kg.`
         );
         get().refreshCases();
         return {
           ok: true,
-          message: "Đã xác nhận kết quả kiểm soát chất lượng — tồn kho đã cập nhật.",
+          message: "Grading confirmed — sellable inventory updated.",
         };
       },
 
@@ -566,25 +574,36 @@ export const useBio = create<BioStore>()(
               : b
           ),
         }));
-        log(set, get().role, `Ghi nhận bước quy trình "${step}" cho lô ${batchId}.`);
+        log(
+          set,
+          get().role,
+          `Protocol step "${step}" recorded for batch ${batchId}.`
+        );
       },
 
       markProcessingDone: (batchId) => {
         const batch = get().batches.find((b) => b.id === batchId);
-        if (!batch) return { ok: false, message: "Không tìm thấy lô." };
+        if (!batch) return { ok: false, message: "Batch not found." };
         if (!isProtocolComplete(batch))
           return {
             ok: false,
             message:
-              "Chưa ghi đủ 6 bước Quy trình Thực địa BioFresh — không thể đánh dấu hoàn tất xử lý.",
+              "Not all six steps of the BioFresh Field Protocol have been recorded, so processing cannot be marked complete.",
           };
         set((s) => ({
           batches: s.batches.map((b) =>
             b.id === batchId ? { ...b, status: "processing" } : b
           ),
         }));
-        log(set, "packhouse", `Hoàn tất xử lý/đóng gói lô ${batchId}.`);
-        return { ok: true, message: "Đã hoàn tất xử lý — Hộ chiếu Quy trình đã mở." };
+        log(
+          set,
+          "packhouse",
+          `Processing and packing complete for batch ${batchId}.`
+        );
+        return {
+          ok: true,
+          message: "Processing complete — the Process Passport is now live.",
+        };
       },
 
       shipBatch: (batchId) => {
@@ -596,7 +615,7 @@ export const useBio = create<BioStore>()(
             a.batchId === batchId ? { ...a, status: "shipped" } : a
           ),
         }));
-        log(set, get().role, `Xuất hàng lô ${batchId}.`);
+        log(set, get().role, `Batch ${batchId} shipped.`);
       },
 
       closeBatch: (batchId, outcome) => {
@@ -614,11 +633,11 @@ export const useBio = create<BioStore>()(
         log(
           set,
           get().role,
-          `Đóng lô ${batchId}: khách mua chấp nhận ${outcome.acceptedKg} kg, từ chối ${outcome.rejectedKg} kg.`
+          `Batch ${batchId} closed: the buyer accepted ${outcome.acceptedKg} kg and rejected ${outcome.rejectedKg} kg.`
         );
       },
 
-      // ---------------- Phòng quyết định ----------------
+      // ---------------- Decision Room ----------------
 
       openCase: (batchId, grade) => {
         const s = get();
@@ -644,11 +663,11 @@ export const useBio = create<BioStore>()(
         log(
           set,
           "manager",
-          `Mở ca quyết định cho ${batchId} · ${grade} (${lot.availableKg} kg chưa phân bổ).`
+          `Decision case opened for ${batchId} · ${grade} (${lot.availableKg} kg unallocated).`
         );
       },
 
-      /** Cập nhật lại các ca chưa quyết định theo tồn kho và tín hiệu mới nhất. */
+      /** Rebuilds any undecided case against the latest inventory and market signals. */
       refreshCases: () => {
         const s = get();
         const now = Date.now();
@@ -699,7 +718,7 @@ export const useBio = create<BioStore>()(
         log(
           set,
           "manager",
-          `Chốt phương án "${option.label}" cho ${kase.batchId} · ${kase.grade}.`
+          `Option "${option.label}" chosen for ${kase.batchId} · ${kase.grade}.`
         );
       },
 
@@ -725,18 +744,20 @@ export const useBio = create<BioStore>()(
     }),
     {
       name: "biofresh-os-mvp",
-      version: 3,
+      version: 4,
       /**
-       * Cấu trúc phương án quyết định đã đổi (thêm khả năng thực hiện).
-       * Dữ liệu trình diễn cũ được bỏ đi để `ensureSeeded` nạp lại bộ mới,
-       * tránh trường hợp phương án cũ thiếu trường và hiện ra số rỗng.
+       * Bumped when the stored shape or the seed content changes: v3 added
+       * confidence to decision options, v4 moved the demonstration data to
+       * English and dropped product emoji. Older data is discarded so
+       * `ensureSeeded` loads a fresh set rather than rendering stale strings
+       * or options that are missing fields.
        */
       migrate: () => ({ ...emptyState }),
     }
   )
 );
 
-/** Ghi nhật ký hoạt động — hiển thị ở Trung tâm điều hành. */
+/** Writes an activity log entry — shown in the Operations Centre. */
 function log(
   set: (fn: (s: State) => Partial<State>) => void,
   role: Role,
@@ -751,8 +772,8 @@ function log(
 }
 
 /**
- * Sau khi Quản lý chốt phương án, hệ thống tự tạo phân bổ tương ứng để
- * số kg chưa phân bổ không còn treo trong Phòng quyết định.
+ * Once the Manager commits to an option, the system creates the matching allocation
+ * so the unallocated kilograms no longer sit open in the Decision Room.
  */
 function applyDecision(
   set: (fn: (s: State) => Partial<State>) => void,
@@ -783,7 +804,7 @@ function applyDecision(
     channel: option.kind === "preserve" ? undefined : channel,
     label:
       option.kind === "preserve"
-        ? "Giữ hàng đã bảo quản — chờ đơn"
+        ? "Preserved stock — awaiting an order"
         : option.label,
     status: "planned",
     createdAt: nowIso(),

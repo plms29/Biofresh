@@ -11,18 +11,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field } from "@/components/ui/field";
+import { ProductLabel } from "@/components/common/product-mark";
 import { useToast } from "@/components/ui/toast";
 
 const GRADES: Grade[] = ["A", "B", "PROCESS", "REJECT"];
 
 const HINTS: Record<Grade, string> = {
-  A: "Đạt tiêu chuẩn khách mua, bán tươi giá cao nhất",
-  B: "Sai màu / kích thước nhẹ, vẫn bán tươi được",
-  PROCESS: "Chỉ dùng cho chế biến (nước ép, sấy)",
-  REJECT: "Không dùng được, loại bỏ",
+  A: "Meets the buyer specification; sells fresh at the best price",
+  B: "Slight colour or size deviation; still sellable fresh",
+  PROCESS: "Processing only (juice, drying)",
+  REJECT: "Unusable; discarded",
 };
 
-/** Nhập kết quả phân loại thực tế bằng tay — không có thị giác máy tính trong phiên bản đầu. */
+/** Manual entry of the actual grading result — this first release has no machine vision. */
 export function QcModal({
   batch,
   onClose,
@@ -33,7 +34,7 @@ export function QcModal({
   const saveQc = useBio((s) => s.saveQc);
   const { toast } = useToast();
 
-  // Hộp thoại được gắn theo từng lô nên khởi tạo trực tiếp từ kết quả đã có.
+  // The modal is mounted per batch, so state is seeded straight from any existing result.
   const [values, setValues] = React.useState<Record<Grade, string>>({
     A: batch.qc ? String(batch.qc.gradeKg.A) : "",
     B: batch.qc ? String(batch.qc.gradeKg.B) : "",
@@ -83,17 +84,22 @@ export function QcModal({
       open
       onClose={onClose}
       className="sm:max-w-xl"
-      title={`Phân loại lô ${batch.id}`}
-      description={`${meta.emoji} ${meta.label} · ${batch.origin} · nhận ${kg(
-        batch.totalKg
-      )}`}
+      title={`Grade batch ${batch.id}`}
+      description={
+        <span className="inline-flex flex-wrap items-center gap-1.5">
+          <ProductLabel product={batch.product} />
+          <span>
+            · {batch.origin} · received {kg(batch.totalKg)}
+          </span>
+        </span>
+      }
       footer={
         <>
           <Button variant="outline" size="lg" onClick={onClose}>
-            Huỷ
+            Cancel
           </Button>
           <Button size="lg" onClick={submit}>
-            Xác nhận kết quả
+            Confirm result
           </Button>
         </>
       }
@@ -124,7 +130,8 @@ export function QcModal({
 
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-muted/60 px-3.5 py-3 text-sm">
           <span className="tnum">
-            Tổng nhập: <strong>{kg(sum)}</strong> / nhận {kg(batch.totalKg)}
+            Total entered: <strong>{kg(sum)}</strong> / received{" "}
+            {kg(batch.totalKg)}
           </span>
           <span
             className={
@@ -134,44 +141,44 @@ export function QcModal({
             }
           >
             {Math.abs(diff) < 0.5
-              ? "Khớp khối lượng nhận"
+              ? "Matches the weight received"
               : diff > 0
-                ? `Vượt ${kg(diff)} — hệ thống sẽ lấy tổng nhập làm khối lượng lô`
-                : `Thiếu ${kg(-diff)} so với khối lượng nhận`}
+                ? `${kg(diff)} over — the entered total will be used as the batch weight`
+                : `${kg(-diff)} short of the weight received`}
           </span>
         </div>
 
         <div className="rounded-xl bg-leaf-50 px-3.5 py-3 text-sm ring-1 ring-leaf-200">
           <p className="tnum text-leaf-800">
-            Giá trị tồn kho ước tính sau phân loại:{" "}
+            Estimated inventory value after grading:{" "}
             <strong>{vndShort(estValue)}</strong>
           </p>
           <p className="mt-0.5 text-xs text-leaf-700/80">
-            Xác nhận xong, Bán hàng thấy ngay {kg(gradeKg.A)} hạng A và{" "}
-            {kg(gradeKg.B)} hạng B có thể bán.
+            Once confirmed, Sales immediately sees {kg(gradeKg.A)} of Grade A and{" "}
+            {kg(gradeKg.B)} of Grade B as sellable inventory.
           </p>
         </div>
 
-        <Field label="Ghi chú chất lượng">
+        <Field label="Quality notes">
           <Textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Trái luống ngoài nhỏ hơn tiêu chuẩn, xuống hạng B…"
+            placeholder="Fruit from the outer rows is undersized, downgraded to Grade B…"
           />
         </Field>
 
         <div>
           <p className="mb-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            Ảnh phân loại
+            Grading photos
           </p>
           <div className="flex flex-wrap items-center gap-2">
             {photos.map((src, i) => (
               <span key={i} className="relative">
-                {/* Ảnh do người dùng chọn, lưu tạm dạng data URL */}
+                {/* User-selected photos held temporarily as data URLs */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={src}
-                  alt={`Ảnh phân loại ${i + 1}`}
+                  alt={`Grading photo ${i + 1}`}
                   className="size-16 rounded-lg object-cover ring-1 ring-foreground/10"
                 />
                 <button
@@ -179,7 +186,7 @@ export function QcModal({
                     setPhotos((prev) => prev.filter((_, idx) => idx !== i))
                   }
                   className="absolute -top-1.5 -right-1.5 rounded-full bg-card p-0.5 ring-1 ring-foreground/15"
-                  aria-label="Xoá ảnh"
+                  aria-label="Remove photo"
                 >
                   <X className="size-3" />
                 </button>

@@ -6,13 +6,14 @@ import { BadgeCheck, Check, Clock, Leaf, ShieldCheck } from "lucide-react";
 import { useBio } from "@/store/use-biofresh";
 import { useHydrated } from "@/hooks/use-client-state";
 import { PRODUCTS } from "@/lib/domain/catalog";
+import { ProductMark } from "@/components/common/product-mark";
 import { PROTOCOL_STEPS, isProtocolComplete, protocolCompletedAt } from "@/lib/domain/protocol";
 import { full } from "@/lib/domain/format";
 import { cn } from "@/lib/utils";
 
 /**
- * Hộ chiếu Quy trình — trang duy nhất khách mua nhìn thấy sau khi quét mã QR.
- * Chỉ xem. Tuyệt đối không có giá, khách mua khác, tồn kho hay dữ liệu quyết định.
+ * Process Passport — the only page a buyer sees after scanning the QR code.
+ * Read-only. It never shows prices, other buyers, inventory or decision data.
  */
 export default function PassportPage() {
   const params = useParams<{ id: string }>();
@@ -29,7 +30,7 @@ export default function PassportPage() {
     <div className="min-h-dvh bg-leaf-900/[0.03] surface-grid">
       <div className="mx-auto w-full max-w-xl px-4 py-8 sm:py-12">
         <div className="overflow-hidden rounded-3xl bg-card ring-1 ring-foreground/10">
-          {/* Đầu trang */}
+          {/* Header */}
           <div className="hero-leaf px-6 py-7">
             <div className="flex items-center gap-2.5">
               <span className="flex size-9 items-center justify-center rounded-xl bg-leaf-600 text-white">
@@ -39,17 +40,18 @@ export default function PassportPage() {
                 <p className="font-heading text-sm font-semibold">
                   BioFresh <span className="text-leaf-600">OS</span>
                 </p>
-                <p className="text-xs text-muted-foreground">Hộ chiếu Quy trình</p>
+                <p className="text-xs text-muted-foreground">Process Passport</p>
               </div>
             </div>
 
             {!hydrated ? null : batch ? (
               <>
-                <h1 className="mt-5 font-heading text-2xl font-semibold">
-                  {PRODUCTS[batch.product].emoji} {PRODUCTS[batch.product].label}
+                <h1 className="mt-5 flex items-center gap-2.5 font-heading text-2xl font-semibold">
+                  <ProductMark product={batch.product} size="lg" />
+                  {PRODUCTS[batch.product].label}
                 </h1>
                 <p className="tnum mt-1 text-sm text-muted-foreground">
-                  Mã lô <strong className="text-foreground">{batch.id}</strong>
+                  Batch code <strong className="text-foreground">{batch.id}</strong>
                 </p>
                 <div
                   className={cn(
@@ -61,41 +63,41 @@ export default function PassportPage() {
                 >
                   {complete ? (
                     <>
-                      <BadgeCheck className="size-4" /> Đã hoàn tất xử lý
+                      <BadgeCheck className="size-4" /> Processing complete
                     </>
                   ) : (
                     <>
-                      <Clock className="size-4" /> Đang xử lý
+                      <Clock className="size-4" /> In processing
                     </>
                   )}
                 </div>
               </>
             ) : (
               <h1 className="mt-5 font-heading text-xl font-semibold">
-                Không tìm thấy lô {batchId}
+                Batch {batchId} not found
               </h1>
             )}
           </div>
 
           {hydrated && batch ? (
             <>
-              {/* Thông tin lô — chỉ những gì công khai được */}
+              {/* Batch details — only what can be made public */}
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 border-y border-border px-6 py-5 text-sm">
                 <div>
                   <dt className="text-xs tracking-wide text-muted-foreground uppercase">
-                    Đơn vị sản xuất
+                    Producer
                   </dt>
                   <dd className="mt-0.5 font-medium">{coopName}</dd>
                 </div>
                 <div>
                   <dt className="text-xs tracking-wide text-muted-foreground uppercase">
-                    Nguồn gốc
+                    Origin
                   </dt>
                   <dd className="mt-0.5 font-medium">{batch.origin}</dd>
                 </div>
                 <div>
                   <dt className="text-xs tracking-wide text-muted-foreground uppercase">
-                    Thời gian thu hoạch
+                    Harvested
                   </dt>
                   <dd className="tnum mt-0.5 font-medium">
                     {full(batch.harvestedAt)}
@@ -103,23 +105,23 @@ export default function PassportPage() {
                 </div>
                 <div>
                   <dt className="text-xs tracking-wide text-muted-foreground uppercase">
-                    Hoàn tất xử lý / đóng gói
+                    Processing and packing complete
                   </dt>
                   <dd className="tnum mt-0.5 font-medium">
-                    {completedAt ? full(completedAt) : "Đang thực hiện"}
+                    {completedAt ? full(completedAt) : "In progress"}
                   </dd>
                 </div>
               </dl>
 
-              {/* 6 bước Quy trình Thực địa */}
+              {/* The six Field Protocol steps */}
               <div className="px-6 py-5">
                 <h2 className="flex items-center gap-2 font-heading text-base font-semibold">
                   <ShieldCheck className="size-4 text-leaf-600" />
-                  Quy trình Thực địa BioFresh
+                  BioFresh Field Protocol
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Sáu bước bắt buộc được ghi nhận tại kho đóng gói, kèm mốc thời
-                  gian.
+                  Six mandatory steps, each recorded at the packhouse with a
+                  timestamp.
                 </p>
 
                 <ol className="mt-4 flex flex-col">
@@ -159,7 +161,7 @@ export default function PassportPage() {
                             {def.label}
                           </p>
                           <p className="tnum mt-0.5 text-xs text-muted-foreground">
-                            {done ? full(step?.at) : "Chưa ghi nhận"}
+                            {done ? full(step?.at) : "Not recorded yet"}
                           </p>
                         </div>
                       </li>
@@ -171,7 +173,7 @@ export default function PassportPage() {
               {batch.publicNote ? (
                 <div className="border-t border-border bg-leaf-50 px-6 py-4">
                   <p className="text-xs font-semibold tracking-wide text-leaf-700 uppercase">
-                    Ghi chú của đơn vị sản xuất
+                    Note from the producer
                   </p>
                   <p className="mt-1 text-sm text-leaf-900/85">
                     {batch.publicNote}
@@ -181,23 +183,23 @@ export default function PassportPage() {
 
               <div className="border-t border-border px-6 py-4">
                 <p className="text-xs text-muted-foreground">
-                  Trang này chỉ để xem. BioFresh không hiển thị giá, danh sách khách
-                  mua, tồn kho hay dữ liệu quyết định nội bộ của đơn vị sản xuất.
+                  This page is read-only. BioFresh never shows the producer&rsquo;s
+                  prices, buyer list, inventory or internal decision data.
                 </p>
               </div>
             </>
           ) : hydrated ? (
             <div className="px-6 py-8">
               <p className="text-sm text-muted-foreground">
-                Mã QR này không khớp với lô nào trong hệ thống. Vui lòng liên hệ đơn
-                vị sản xuất để được xác nhận.
+                This QR code does not match any batch in the system. Please
+                contact the producer to confirm.
               </p>
             </div>
           ) : null}
         </div>
 
         <p className="mt-4 text-center text-xs text-muted-foreground">
-          BioFresh OS · Hộ chiếu Quy trình theo lô
+          BioFresh OS · Process Passport, per batch
         </p>
       </div>
     </div>

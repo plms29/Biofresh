@@ -31,6 +31,7 @@ import {
   AllocationStatusTag,
 } from "@/components/common/badges";
 import { AlertList } from "@/components/common/alert-list";
+import { ProductLabel, ProductMark } from "@/components/common/product-mark";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Meter } from "@/components/ui/meter";
@@ -93,9 +94,9 @@ export default function SalesPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="Bàn làm việc Bán hàng"
-        title="Đơn hàng, tồn kho thật và tín hiệu thị trường"
-        description="Khách mua vẫn gửi yêu cầu qua Zalo, thư điện tử, điện thoại. Bạn nhập vào đây một lần, cả vườn và kho dùng chung tiêu chuẩn đó."
+        eyebrow="Sales desk"
+        title="Orders, real inventory and market signals"
+        description="Buyers still send requests by Zalo, email and phone. You enter them here once, and the field and packhouse work from that same specification."
         actions={
           <>
             <Button
@@ -103,7 +104,7 @@ export default function SalesPage() {
               size="lg"
               onClick={() => setSignalModal(true)}
             >
-              <Radio /> Tín hiệu
+              <Radio /> Market signal
             </Button>
             <Button
               size="lg"
@@ -112,7 +113,7 @@ export default function SalesPage() {
                 setOrderModal(true);
               }}
             >
-              <Plus /> Nhập đơn
+              <Plus /> New order
             </Button>
           </>
         }
@@ -120,29 +121,29 @@ export default function SalesPage() {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi
-          label="Đơn đang mở"
+          label="Open orders"
           value={hydrated ? openOrders.length : "—"}
-          sub={`${state.orders.filter((o) => o.status === "confirmed").length} đơn đã chốt`}
+          sub={`${state.orders.filter((o) => o.status === "confirmed").length} confirmed`}
           icon={ShoppingBasket}
         />
         <Kpi
-          label="Có thể bán ngay"
+          label="Sellable now"
           value={hydrated ? kg(availableKg) : "—"}
-          sub="Đã trừ phần đã phân bổ"
+          sub="Net of everything already allocated"
           tone="leaf"
           icon={PackageSearch}
         />
         <Kpi
-          label="Đang thiếu hàng"
+          label="Short of stock"
           value={hydrated ? kg(shortageKg) : "—"}
-          sub={`${coverages.filter((c) => c.shortageKg > 0).length} đơn bị thiếu`}
+          sub={`${coverages.filter((c) => c.shortageKg > 0).length} orders short`}
           tone={shortageKg > 0 ? "risk" : "leaf"}
           icon={TriangleAlert}
         />
         <Kpi
-          label="Giá trị tồn kho"
+          label="Inventory value"
           value={hydrated ? vndShort(inventoryValue) : "—"}
-          sub="Theo giá tham chiếu nội bộ"
+          sub="At the internal reference price"
           tone="sky"
           icon={Coins}
         />
@@ -156,9 +157,9 @@ export default function SalesPage() {
         value={tab}
         onChange={setTab}
         options={[
-          { value: "orders", label: "Đơn hàng đang mở", badge: coverages.length },
-          { value: "inventory", label: "Tồn kho có thể bán" },
-          { value: "signals", label: "Tín hiệu thị trường" },
+          { value: "orders", label: "Open orders", badge: coverages.length },
+          { value: "inventory", label: "Sellable inventory" },
+          { value: "signals", label: "Market signals" },
         ]}
       />
 
@@ -167,11 +168,11 @@ export default function SalesPage() {
           {!hydrated ? null : coverages.length === 0 ? (
             <EmptyState
               icon={ShoppingBasket}
-              title="Chưa có đơn hàng nào đang mở"
-              hint="Nhập yêu cầu khách mua gửi qua Zalo hoặc điện thoại để bắt đầu."
+              title="No open orders yet"
+              hint="Enter a buyer request that came in by Zalo or phone to get started."
               action={
                 <Button className="mt-2" onClick={() => setOrderModal(true)}>
-                  <Plus /> Nhập đơn
+                  <Plus /> New order
                 </Button>
               }
             />
@@ -191,15 +192,14 @@ export default function SalesPage() {
                           <ChannelTag source={o.source} />
                         </CardTitle>
                         <p className="mt-1 text-sm text-muted-foreground">
-                          {o.id} · {PRODUCTS[o.product].emoji}{" "}
-                          {PRODUCTS[o.product].label} · {kg(o.qtyKg)} ·{" "}
-                          {GRADE_LABEL[o.spec.grade]} ·{" "}
+                          {o.id} · <ProductLabel product={o.product} /> ·{" "}
+                          {kg(o.qtyKg)} · {GRADE_LABEL[o.spec.grade]} ·{" "}
                           {SALES_CHANNEL_LABEL[o.salesChannel]}
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="tnum text-sm font-medium">
-                          Hạn giao {d(o.dueDate)}
+                          Due {d(o.dueDate)}
                         </p>
                         <p
                           className={
@@ -218,18 +218,19 @@ export default function SalesPage() {
                     <div>
                       <div className="mb-1.5 flex items-baseline justify-between text-sm">
                         <span className="tnum">
-                          Đã phân bổ {kg(cov.allocatedKg)} / {kg(o.qtyKg)}
+                          Allocated {kg(cov.allocatedKg)} / {kg(o.qtyKg)}
                         </span>
                         {cov.shortageKg > 0 ? (
                           <span className="tnum font-medium text-risk-700">
-                            Thiếu {kg(cov.shortageKg)}
+                            Short {kg(cov.shortageKg)}
                           </span>
                         ) : cov.remainingKg > 0 ? (
                           <span className="tnum text-sun-700">
-                            Còn phải phân bổ {kg(cov.remainingKg)} — tồn kho đủ
+                            {kg(cov.remainingKg)} still to allocate — stock is
+                            available
                           </span>
                         ) : (
-                          <span className="text-leaf-700">Đã đủ hàng</span>
+                          <span className="text-leaf-700">Fully covered</span>
                         )}
                       </div>
                       <Meter
@@ -241,37 +242,37 @@ export default function SalesPage() {
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="rounded-xl bg-muted/50 px-3.5 py-3 text-sm">
                         <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                          Tiêu chuẩn khách mua
+                          Buyer specification
                         </p>
                         <ul className="mt-1.5 flex flex-col gap-0.5 text-foreground/80">
-                          <li>Hạng: {GRADE_LABEL[o.spec.grade]}</li>
+                          <li>Grade: {GRADE_LABEL[o.spec.grade]}</li>
                           {o.spec.sizeMinMm || o.spec.sizeMaxMm ? (
                             <li>
-                              Kích thước: {o.spec.sizeMinMm ?? "—"}–
+                              Size: {o.spec.sizeMinMm ?? "—"}–
                               {o.spec.sizeMaxMm ?? "—"} mm
                             </li>
                           ) : null}
-                          {o.spec.colorNote ? <li>Màu: {o.spec.colorNote}</li> : null}
+                          {o.spec.colorNote ? <li>Colour: {o.spec.colorNote}</li> : null}
                           {o.spec.brixMin ? <li>Brix ≥ {o.spec.brixMin}</li> : null}
                           {o.spec.rejectNotes ? (
-                            <li>Từ chối: {o.spec.rejectNotes}</li>
+                            <li>Rejects: {o.spec.rejectNotes}</li>
                           ) : null}
                         </ul>
                         {o.specRevisions > 0 ? (
                           <p className="mt-2 text-xs text-sun-700">
-                            Đã cập nhật {o.specRevisions} lần · ngoài vườn đã được
-                            thông báo
+                            Updated {o.specRevisions} times · the field has been
+                            notified
                           </p>
                         ) : null}
                       </div>
 
                       <div className="rounded-xl bg-muted/50 px-3.5 py-3 text-sm">
                         <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                          Phân bổ hiện tại
+                          Current allocations
                         </p>
                         {allocs.length === 0 ? (
                           <p className="mt-1.5 text-muted-foreground">
-                            Chưa phân bổ lô nào.
+                            No batch allocated yet.
                           </p>
                         ) : (
                           <ul className="mt-1.5 flex flex-col gap-1.5">
@@ -298,12 +299,12 @@ export default function SalesPage() {
                                         variant="secondary"
                                         onClick={() => confirmAllocation(a.id)}
                                       >
-                                        Xác nhận
+                                        Confirm
                                       </Button>
                                       <Button
                                         size="icon-xs"
                                         variant="ghost"
-                                        aria-label="Bỏ phân bổ"
+                                        aria-label="Remove allocation"
                                         onClick={() => removeAllocation(a.id)}
                                       >
                                         <Trash2 className="size-3" />
@@ -317,7 +318,7 @@ export default function SalesPage() {
                         )}
                         {o.offerPrice ? (
                           <p className="tnum mt-2 text-xs text-muted-foreground">
-                            Giá chào {vnd(o.offerPrice)}/kg · giá trị đơn{" "}
+                            Offer {vnd(o.offerPrice)}/kg · order value{" "}
                             {vndShort(o.offerPrice * o.qtyKg)}
                           </p>
                         ) : null}
@@ -326,7 +327,7 @@ export default function SalesPage() {
 
                     {o.notes ? (
                       <p className="text-sm text-muted-foreground">
-                        Ghi chú: {o.notes}
+                        Notes: {o.notes}
                       </p>
                     ) : null}
 
@@ -343,7 +344,7 @@ export default function SalesPage() {
                           })
                         }
                       >
-                        Phân bổ lô cho đơn
+                        Allocate a batch to this order
                       </Button>
                       <Button
                         variant="outline"
@@ -353,7 +354,7 @@ export default function SalesPage() {
                           setOrderModal(true);
                         }}
                       >
-                        <Pencil /> Sửa tiêu chuẩn
+                        <Pencil /> Edit specification
                       </Button>
                       {o.status === "draft" ? (
                         <Button
@@ -361,7 +362,7 @@ export default function SalesPage() {
                           size="lg"
                           onClick={() => setOrderStatus(o.id, "confirmed")}
                         >
-                          Chốt đơn
+                          Confirm order
                         </Button>
                       ) : cov.remainingKg <= 0 ? (
                         <Button
@@ -369,7 +370,7 @@ export default function SalesPage() {
                           size="lg"
                           onClick={() => setOrderStatus(o.id, "fulfilled")}
                         >
-                          Đánh dấu đã giao xong
+                          Mark as fulfilled
                         </Button>
                       ) : null}
                     </div>
@@ -385,16 +386,16 @@ export default function SalesPage() {
         <Card>
           <CardHeader className="border-b">
             <SectionTitle
-              title="Tồn kho có thể bán theo hạng"
-              hint="Chỉ tính lô đã được kho đóng gói xác nhận kết quả phân loại."
+              title="Sellable inventory by grade"
+              hint="Counts only batches whose grading result has been confirmed by the packhouse."
             />
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             {!hydrated ? null : inventory.length === 0 ? (
               <EmptyState
                 icon={PackageSearch}
-                title="Chưa có tồn kho nào"
-                hint="Tồn kho xuất hiện ngay khi kho đóng gói xác nhận kết quả kiểm soát chất lượng."
+                title="No inventory yet"
+                hint="Inventory appears as soon as the packhouse confirms a quality control result."
               />
             ) : (
               inventory.map((row) => (
@@ -404,7 +405,7 @@ export default function SalesPage() {
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                     <div className="flex items-center gap-2.5">
-                      <span className="text-xl">{PRODUCTS[row.product].emoji}</span>
+                      <ProductMark product={row.product} size="md" />
                       <div>
                         <p className="font-medium">{PRODUCTS[row.product].label}</p>
                         <GradeTag grade={row.grade} />
@@ -415,7 +416,7 @@ export default function SalesPage() {
                         {kg(row.availableKg)}
                       </p>
                       <p className="tnum text-xs text-muted-foreground">
-                        trên {kg(row.qcKg)} đã phân loại
+                        of {kg(row.qcKg)} graded
                       </p>
                     </div>
                   </div>
@@ -436,7 +437,7 @@ export default function SalesPage() {
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="tnum">
-                            còn {kg(l.availableKg)} / {kg(l.qcKg)}
+                            {kg(l.availableKg)} left of {kg(l.qcKg)}
                           </span>
                           <span
                             className={
@@ -455,14 +456,14 @@ export default function SalesPage() {
                             disabled={l.availableKg <= 0}
                             onClick={() =>
                               setAllocTarget({
-                                label: `Lô ${l.batchId}`,
+                                label: `Batch ${l.batchId}`,
                                 grade: l.grade,
                                 batchId: l.batchId,
                                 suggestKg: l.availableKg,
                               })
                             }
                           >
-                            Phân bổ
+                            Allocate
                           </Button>
                         </div>
                       </li>
@@ -479,11 +480,11 @@ export default function SalesPage() {
         <Card>
           <CardHeader className="border-b">
             <SectionTitle
-              title="Tín hiệu thị trường"
-              hint="Số liệu này là cơ sở để Phòng quyết định so sánh phương án bán."
+              title="Market signals"
+              hint="These figures are the basis the Decision Room uses to compare selling options."
               actions={
                 <Button variant="outline" onClick={() => setSignalModal(true)}>
-                  <Plus /> Thêm
+                  <Plus /> Add
                 </Button>
               }
             />
@@ -492,8 +493,8 @@ export default function SalesPage() {
             {!hydrated ? null : state.signals.length === 0 ? (
               <EmptyState
                 icon={Radio}
-                title="Chưa có tín hiệu nào"
-                hint="Ghi lại nhu cầu và giá bạn nghe được từ khách mua hoặc chợ đầu mối."
+                title="No market signals yet"
+                hint="Record the demand and prices you hear from buyers or the wholesale market."
               />
             ) : (
               <ul className="flex flex-col gap-2">
@@ -517,8 +518,9 @@ export default function SalesPage() {
                           </span>
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {PRODUCTS[s.product].emoji} {PRODUCTS[s.product].label} ·{" "}
-                          {GRADE_LABEL[s.grade]} · cần {kg(s.qtyKg)} · {s.enteredBy}
+                          <ProductLabel product={s.product} /> ·{" "}
+                          {GRADE_LABEL[s.grade]} · wants {kg(s.qtyKg)} ·{" "}
+                          {s.enteredBy}
                         </p>
                       </div>
                       <div className="text-right">
@@ -533,8 +535,8 @@ export default function SalesPage() {
                           }
                         >
                           {expired
-                            ? `hết hiệu lực ${dt(s.validUntil)}`
-                            : `hiệu lực ${now ? untilText(s.validUntil, now) : "—"}`}
+                            ? `expired ${dt(s.validUntil)}`
+                            : `valid, ${now ? untilText(s.validUntil, now) : "—"}`}
                         </p>
                       </div>
                     </li>

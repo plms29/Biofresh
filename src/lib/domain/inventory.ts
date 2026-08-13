@@ -8,7 +8,7 @@ import {
 } from "@/types";
 import { PRODUCTS } from "./catalog";
 
-/** Lô con theo hạng chất lượng — tách ra từ kết quả kiểm soát chất lượng. */
+/** A sub-lot split out of the grading result, one per quality grade. */
 export interface Lot {
   batchId: string;
   product: ProductKey;
@@ -18,7 +18,7 @@ export interface Lot {
   allocatedKg: number;
   availableKg: number;
   qcAt: string;
-  /** Hạn phải hành động = thời điểm kiểm soát chất lượng + cửa sổ cấu hình của sản phẩm. */
+  /** Action deadline = time of grading + the product's configured action window. */
   actionDeadline: string;
 }
 
@@ -54,7 +54,7 @@ export function allLots(batches: Batch[], allocations: Allocation[]): Lot[] {
   return batches.flatMap((b) => batchLots(b, allocations));
 }
 
-/** Tồn kho có thể bán (chỉ hạng A/B, chỉ lô đã kiểm soát chất lượng và chưa đóng). */
+/** Sellable inventory (grades A/B only, from graded batches that are still open). */
 export interface InventoryRow {
   product: ProductKey;
   grade: Grade;
@@ -105,7 +105,7 @@ export function availableFor(
     .reduce((s, r) => s + r.availableKg, 0);
 }
 
-/** Số kg đã phân bổ cho một đơn hàng. */
+/** Kilograms already allocated to a given order. */
 export function allocatedForOrder(
   allocations: Allocation[],
   orderId: string
@@ -120,7 +120,7 @@ export interface OrderCoverage {
   allocatedKg: number;
   remainingKg: number;
   availableKg: number;
-  /** Thiếu hàng: tồn kho khả dụng không đủ bù phần còn lại của đơn đã chốt. */
+  /** Shortage: available inventory does not cover the remainder of a confirmed order. */
   shortageKg: number;
   overAllocatedKg: number;
 }
@@ -148,7 +148,7 @@ export function orderCoverage(
   };
 }
 
-/** Khối lượng đã kiểm soát chất lượng nhưng chưa được phân bổ (gồm cả hàng chế biến). */
+/** Graded weight that is still unallocated (processing grade included). */
 export function unallocatedLots(
   batches: Batch[],
   allocations: Allocation[]
@@ -159,7 +159,7 @@ export function unallocatedLots(
   ).filter((l) => l.grade !== "REJECT" && l.availableKg > 0);
 }
 
-/** Giá trị tiền đang có nguy cơ mất = kg chưa phân bổ × giá tham chiếu nội bộ. */
+/** Value at risk = unallocated kg x internal reference price. */
 export function valueAtRisk(lots: Lot[]): number {
   return lots.reduce(
     (s, l) => s + l.availableKg * PRODUCTS[l.product].refPrice[l.grade],

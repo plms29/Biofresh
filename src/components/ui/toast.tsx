@@ -36,7 +36,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[60] flex flex-col items-center gap-2 px-4 sm:bottom-6">
+      {/* Announced politely so screen readers hear it without losing focus. */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="false"
+        className="pointer-events-none fixed inset-x-0 bottom-20 z-[60] flex flex-col items-center gap-2 px-4 sm:bottom-6"
+      >
         {items.map((t) => {
           const Icon =
             t.tone === "success"
@@ -48,7 +54,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             <div
               key={t.id}
               className={cn(
-                "pointer-events-auto flex w-full max-w-md items-start gap-2.5 rounded-xl px-4 py-3 text-sm shadow-lg ring-1 animate-in slide-in-from-bottom-3",
+                "pointer-events-auto flex w-full max-w-md items-start gap-2.5 rounded-xl px-4 py-3 text-sm shadow-[var(--shadow-e3)] ring-1 motion-safe:animate-in motion-safe:slide-in-from-bottom-3 motion-safe:duration-200",
                 t.tone === "success" &&
                   "bg-leaf-700 text-white ring-leaf-800/40",
                 t.tone === "error" && "bg-risk-500 text-white ring-risk-700/40",

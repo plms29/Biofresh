@@ -28,12 +28,12 @@ const NAV: {
   icon: React.ComponentType<{ className?: string }>;
   role?: Role;
 }[] = [
-  { href: "/", label: "Tổng quan chuỗi", icon: LayoutDashboard },
-  { href: "/sales", label: "Bàn làm việc Bán hàng", icon: ShoppingBasket, role: "sales" },
-  { href: "/field", label: "Thu hoạch hôm nay", icon: Sprout, role: "field" },
-  { href: "/packhouse", label: "Nhận hàng và Phân loại", icon: Warehouse, role: "packhouse" },
-  { href: "/manager", label: "Điều hành + Phòng quyết định", icon: ClipboardList, role: "manager" },
-  { href: "/batches", label: "Lô hàng", icon: Boxes },
+  { href: "/", label: "Chain overview", icon: LayoutDashboard },
+  { href: "/sales", label: ROLE_META.sales.screen, icon: ShoppingBasket, role: "sales" },
+  { href: "/field", label: ROLE_META.field.screen, icon: Sprout, role: "field" },
+  { href: "/packhouse", label: ROLE_META.packhouse.screen, icon: Warehouse, role: "packhouse" },
+  { href: "/manager", label: ROLE_META.manager.screen, icon: ClipboardList, role: "manager" },
+  { href: "/batches", label: "Batches", icon: Boxes },
 ];
 
 const ROLES: Role[] = ["sales", "field", "packhouse", "manager"];
@@ -83,9 +83,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   };
 
   /**
-   * Vai trò luôn đi theo màn hình đang mở: đứng ở màn hình kho đóng gói nghĩa là
-   * đang làm việc với tư cách kho. Nhờ vậy mọi thao tác (ghi bước quy trình, phân
-   * loại, phân bổ...) được ghi đúng người thực hiện thay vì theo nút vai trò cũ.
+   * The active role always follows the screen in view: standing on the packhouse
+   * screen means working as the packhouse. That way every action (logging a
+   * protocol step, grading, allocating) is attributed to the right person rather
+   * than to whichever role chip was picked last.
    */
   const routeRole = NAV.find(
     (n) => n.role && pathname.startsWith(n.href)
@@ -97,7 +98,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-dvh flex-col lg:flex-row">
-      {/* Cột điều hướng — máy tính */}
+      {/* Side navigation — desktop */}
       <aside className="hidden w-[268px] shrink-0 flex-col border-r border-border bg-card lg:flex">
         <div className="flex items-center gap-2.5 px-5 py-5">
           <span className="flex size-9 items-center justify-center rounded-xl bg-leaf-600 text-white">
@@ -113,7 +114,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="px-4 pb-3">
           <p className="mb-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            Vai trò
+            Role
           </p>
           <div className="grid grid-cols-2 gap-1.5">
             {ROLES.map((r) => (
@@ -132,7 +133,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <span
                     className={cn(
                       "ml-1 tnum",
-                      hydrated && role === r ? "text-white/80" : "text-risk-500"
+                      hydrated && role === r ? "text-white/90" : "text-risk-700"
                     )}
                   >
                     ·{countFor(r)}
@@ -182,7 +183,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             className="flex items-center gap-2 rounded-lg bg-leaf-50 px-3 py-2.5 text-sm text-leaf-800 ring-1 ring-leaf-200 transition-colors hover:bg-leaf-100"
           >
             <BadgeCheck className="size-4" />
-            <span className="flex-1">Xem Hộ chiếu Quy trình</span>
+            <span className="flex-1">View Process Passport</span>
           </Link>
           <Button
             variant="ghost"
@@ -190,15 +191,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             className="mt-2 w-full justify-start text-muted-foreground"
             onClick={() => {
               resetDemo();
-              toast("Đã đặt lại dữ liệu trình diễn.", "info");
+              toast("Demo data has been reset.", "info");
             }}
           >
-            <RotateCcw className="size-3.5" /> Đặt lại dữ liệu
+            <RotateCcw className="size-3.5" /> Reset data
           </Button>
         </div>
       </aside>
 
-      {/* Thanh trên — điện thoại */}
+      {/* Top bar — mobile */}
       <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-card/95 px-4 py-3 backdrop-blur lg:hidden">
         <span className="flex size-8 items-center justify-center rounded-lg bg-leaf-600 text-white">
           <Leaf className="size-4" />
@@ -210,7 +211,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </p>
         </div>
         <select
-          aria-label="Chọn vai trò"
+          aria-label="Select role"
           value={hydrated ? role : "sales"}
           onChange={(e) => onPickRole(e.target.value as Role)}
           className="h-9 rounded-lg border border-input bg-card px-2 text-xs font-medium"
@@ -229,7 +230,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </main>
 
-      {/* Điều hướng dưới — điện thoại */}
+      {/* Bottom navigation — mobile */}
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur lg:hidden">
         <ul className="flex">
           {NAV.filter((n) => n.href !== "/batches").map((item) => {
@@ -250,7 +251,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <span className="absolute top-1.5 right-1/2 translate-x-4 size-2 rounded-full bg-risk-500" />
                   ) : null}
                   <span className="max-w-full truncate px-1">
-                    {item.href === "/" ? "Tổng quan" : ROLE_META[item.role!].short}
+                    {item.href === "/" ? "Overview" : ROLE_META[item.role!].short}
                   </span>
                 </Link>
               </li>

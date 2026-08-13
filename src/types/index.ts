@@ -1,7 +1,8 @@
 // ============================================================
 // BioFresh OS — MVP domain types
-// Phạm vi: 4 điểm đứt gãy thông tin + hỗ trợ quyết định hàng dư thừa.
-// Khách mua KHÔNG phải người dùng hệ thống (chỉ quét QR xem Hộ chiếu Quy trình).
+// Scope: the four information breakdowns + surplus decision support.
+// Buyers are NOT users of the system (they only scan a QR to read
+// the Process Passport).
 // ============================================================
 
 export type Role = "sales" | "field" | "packhouse" | "manager";
@@ -11,32 +12,32 @@ export const ROLE_META: Record<
   { label: string; home: string; screen: string; short: string }
 > = {
   sales: {
-    label: "Bộ phận Bán hàng",
+    label: "Sales",
     home: "/sales",
-    screen: "Bàn làm việc Bán hàng",
-    short: "Bán hàng",
+    screen: "Sales Desk",
+    short: "Sales",
   },
   field: {
-    label: "Giám sát ngoài vườn",
+    label: "Field Supervisor",
     home: "/field",
-    screen: "Thu hoạch hôm nay",
-    short: "Ngoài vườn",
+    screen: "Today's Harvest",
+    short: "Field",
   },
   packhouse: {
-    label: "Kho đóng gói / Kiểm soát chất lượng",
+    label: "Packhouse / Quality Control",
     home: "/packhouse",
-    screen: "Nhận hàng và Phân loại",
-    short: "Kho đóng gói",
+    screen: "Intake & Grading",
+    short: "Packhouse",
   },
   manager: {
-    label: "Quản lý / Giám đốc HTX",
+    label: "Manager / Co-op Director",
     home: "/manager",
-    screen: "Trung tâm điều hành + Phòng quyết định",
-    short: "Quản lý",
+    screen: "Operations Centre + Decision Room",
+    short: "Manager",
   },
 };
 
-// ---------- Sản phẩm & hạng ----------
+// ---------- Products & grades ----------
 
 export type ProductKey =
   | "strawberry"
@@ -45,40 +46,55 @@ export type ProductKey =
   | "avocado"
   | "passion_fruit";
 
+/**
+ * Colour token used to mark a product across the interface.
+ * Products are identified by a coloured mark plus their name — never by
+ * an emoji, which renders differently on every platform and cannot be
+ * themed or contrast-checked.
+ */
+export type ProductTone =
+  | "crimson"
+  | "magenta"
+  | "amber"
+  | "olive"
+  | "violet";
+
 export interface ProductMeta {
   key: ProductKey;
   label: string;
-  emoji: string;
+  /** Two-letter mark shown inside the coloured product chip. */
+  code: string;
+  tone: ProductTone;
   unit: "kg";
-  /** Số giờ khuyến nghị phải hành động sau khi kiểm soát chất lượng (cấu hình nội bộ, không phải AI dự báo). */
+  /** Hours within which the batch must be acted on after QC (manually configured, not a forecast). */
   actionWindowHours: number;
-  /** Giá tham chiếu nội bộ do HTX ghi nhận (VND/kg) theo hạng. */
+  /** Internal reference price recorded by the co-op (VND/kg) per grade. */
   refPrice: Record<Grade, number>;
 }
 
-/** Hạng chất lượng nhập thủ công tại kho đóng gói. */
+/** Quality grade entered by hand at the packhouse. */
 export type Grade = "A" | "B" | "PROCESS" | "REJECT";
 
 export const GRADE_LABEL: Record<Grade, string> = {
-  A: "Hạng A",
-  B: "Hạng B",
-  PROCESS: "Hàng chế biến",
-  REJECT: "Hàng loại",
+  A: "Grade A",
+  B: "Grade B",
+  PROCESS: "Processing",
+  REJECT: "Reject",
 };
 
-/** Hạng có thể bán tươi cho khách mua. */
+/** Grades that can be sold fresh to buyers. */
 export const SELLABLE_GRADES: Grade[] = ["A", "B"];
 
-// ---------- Đơn hàng / yêu cầu khách mua ----------
+// ---------- Orders / buyer requests ----------
 
 export type OrderChannel = "zalo" | "email" | "phone" | "pdf_excel" | "walk_in";
 
 export const CHANNEL_LABEL: Record<OrderChannel, string> = {
   zalo: "Zalo",
-  email: "Thư điện tử",
-  phone: "Điện thoại",
+  email: "Email",
+  phone: "Phone",
   pdf_excel: "PDF / Excel",
-  walk_in: "Gặp trực tiếp",
+  walk_in: "In person",
 };
 
 export type SalesChannel =
@@ -89,34 +105,34 @@ export type SalesChannel =
   | "retail";
 
 export const SALES_CHANNEL_LABEL: Record<SalesChannel, string> = {
-  supermarket: "Siêu thị",
-  wholesale: "Chợ đầu mối",
-  export: "Xuất khẩu",
-  processing: "Nhà máy chế biến",
-  retail: "Bán lẻ / cửa hàng",
+  supermarket: "Supermarket",
+  wholesale: "Wholesale market",
+  export: "Export",
+  processing: "Processing plant",
+  retail: "Retail / shops",
 };
 
-/** Tiêu chuẩn khách mua — nguồn duy nhất để sinh hướng dẫn hái & phân loại. */
+/** Buyer specification — the single source for picking and grading guidance. */
 export interface BuyerSpec {
   grade: Grade;
-  /** Đường kính / kích thước mong muốn, mm. */
+  /** Required diameter / size, in mm. */
   sizeMinMm?: number;
   sizeMaxMm?: number;
-  /** Mô tả màu / độ chín mong muốn. */
+  /** Required colour / ripeness description. */
   colorNote?: string;
-  /** Độ ngọt tối thiểu (Brix) nếu khách mua yêu cầu. */
+  /** Minimum sweetness (Brix) if the buyer asks for it. */
   brixMin?: number;
-  /** Các lỗi bị từ chối. */
+  /** Defects the buyer rejects. */
   rejectNotes?: string;
 }
 
 export type OrderStatus = "draft" | "confirmed" | "fulfilled" | "cancelled";
 
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
-  draft: "Nháp",
-  confirmed: "Đã chốt",
-  fulfilled: "Đã giao xong",
-  cancelled: "Đã huỷ",
+  draft: "Draft",
+  confirmed: "Confirmed",
+  fulfilled: "Fulfilled",
+  cancelled: "Cancelled",
 };
 
 export interface Order {
@@ -126,7 +142,7 @@ export interface Order {
   qtyKg: number;
   spec: BuyerSpec;
   dueDate: string; // ISO
-  /** Giá chào nếu có (VND/kg). */
+  /** Offered price if known (VND/kg). */
   offerPrice?: number;
   salesChannel: SalesChannel;
   source: OrderChannel;
@@ -134,15 +150,15 @@ export interface Order {
   status: OrderStatus;
   createdAt: string;
   updatedAt: string;
-  /** Lịch sử sửa tiêu chuẩn để truy vết thông báo xuống ngoài vườn / kho. */
+  /** Spec edit history, so field and packhouse notifications stay traceable. */
   specRevisions: number;
 }
 
-// ---------- Tín hiệu thị trường ----------
+// ---------- Market signals ----------
 
 export interface MarketSignal {
   id: string;
-  market: string; // khách mua hoặc thị trường
+  market: string; // buyer or marketplace
   product: ProductKey;
   grade: Grade;
   qtyKg: number;
@@ -153,24 +169,24 @@ export interface MarketSignal {
   createdAt: string;
 }
 
-// ---------- Lệnh thu hoạch ----------
+// ---------- Harvest orders ----------
 
 export type HarvestOrderStatus = "pending" | "in_progress" | "done";
 
 export const HARVEST_STATUS_LABEL: Record<HarvestOrderStatus, string> = {
-  pending: "Chưa bắt đầu",
-  in_progress: "Đang hái",
-  done: "Đã xong",
+  pending: "Not started",
+  in_progress: "Picking",
+  done: "Finished",
 };
 
-/** Hướng dẫn hái trực quan, rút gọn — sinh tự động từ tiêu chuẩn khách mua. */
+/** Short, visual picking guide generated from the buyer specification. */
 export interface PickingGuide {
   headline: string;
   colorHint: string;
   sizeHint: string;
   doList: string[];
   dontList: string[];
-  /** Tăng mỗi lần Bán hàng sửa tiêu chuẩn -> ngoài vườn thấy dấu "đã cập nhật". */
+  /** Increments each time Sales edits the spec, so the field sees an "updated" flag. */
   revision: number;
 }
 
@@ -197,7 +213,7 @@ export interface HarvestOrder {
   finishedAt?: string;
 }
 
-// ---------- Lô hàng ----------
+// ---------- Batches ----------
 
 export type BatchStatus =
   | "planned"
@@ -210,14 +226,14 @@ export type BatchStatus =
   | "closed";
 
 export const BATCH_STATUS_LABEL: Record<BatchStatus, string> = {
-  planned: "Đã lên kế hoạch",
-  harvesting: "Đang thu hoạch",
-  intake: "Đã nhập kho",
-  qc_done: "Đã kiểm soát chất lượng",
-  decision: "Quyết định xử lý",
-  processing: "Xử lý / Đóng gói",
-  shipped: "Xuất hàng",
-  closed: "Đóng lô",
+  planned: "Planned",
+  harvesting: "Harvesting",
+  intake: "Received",
+  qc_done: "Graded",
+  decision: "Decision pending",
+  processing: "Processing / Packing",
+  shipped: "Shipped",
+  closed: "Closed",
 };
 
 export const BATCH_STATUS_ORDER: BatchStatus[] = [
@@ -231,17 +247,17 @@ export const BATCH_STATUS_ORDER: BatchStatus[] = [
   "closed",
 ];
 
-/** Kết quả kiểm soát chất lượng / phân loại — nhập tay tại kho. */
+/** Quality control / grading result — entered by hand at the packhouse. */
 export interface QcResult {
   gradeKg: Record<Grade, number>;
   notes?: string;
-  /** Ảnh dạng data URL hoặc tên tệp (demo). */
+  /** Photos as data URLs or file names (demo). */
   photos: string[];
   confirmedAt: string;
   confirmedBy: string;
 }
 
-/** 6 bước Quy trình Thực địa BioFresh. */
+/** The six steps of the BioFresh Field Protocol. */
 export type ProtocolStepKey =
   | "sort"
   | "solution"
@@ -267,30 +283,30 @@ export interface BatchOutcome {
 }
 
 export interface Batch {
-  id: string; // mã lô, ví dụ BF-2026-0801
+  id: string; // batch code, e.g. BF-2608-01
   harvestOrderId?: string;
   product: ProductKey;
-  origin: string; // vườn / nông hộ / HTX
+  origin: string; // plot / farm household / co-op
   harvestedAt: string;
   intakeAt?: string;
   totalKg: number;
   status: BatchStatus;
   qc?: QcResult;
   protocol: ProtocolStep[];
-  /** Ghi chú chất lượng HTX chọn công khai trên Hộ chiếu Quy trình. */
+  /** Quality note the co-op chooses to publish on the Process Passport. */
   publicNote?: string;
   outcome?: BatchOutcome;
   createdAt: string;
 }
 
-// ---------- Phân bổ hàng ----------
+// ---------- Allocations ----------
 
 export type AllocationStatus = "planned" | "confirmed" | "shipped";
 
 export const ALLOCATION_STATUS_LABEL: Record<AllocationStatus, string> = {
-  planned: "Dự kiến",
-  confirmed: "Đã xác nhận",
-  shipped: "Đã xuất",
+  planned: "Planned",
+  confirmed: "Confirmed",
+  shipped: "Shipped",
 };
 
 export interface Allocation {
@@ -298,7 +314,7 @@ export interface Allocation {
   batchId: string;
   grade: Grade;
   kg: number;
-  /** Phân bổ cho đơn hàng, hoặc cho kênh bán khi xử lý hàng dư thừa. */
+  /** Allocated to an order, or to a sales channel when clearing surplus. */
   orderId?: string;
   channel?: SalesChannel;
   label: string;
@@ -307,7 +323,7 @@ export interface Allocation {
   createdBy: string;
 }
 
-// ---------- Ca quyết định hàng dư thừa ----------
+// ---------- Surplus decision cases ----------
 
 export type DecisionKind =
   | "sell_now"
@@ -317,19 +333,19 @@ export type DecisionKind =
   | "hold";
 
 export const DECISION_LABEL: Record<DecisionKind, string> = {
-  sell_now: "Bán ngay",
-  switch_channel: "Đổi kênh bán",
-  preserve: "Bảo quản (Quy trình BioFresh)",
-  process: "Chế biến",
-  hold: "Giữ hàng chờ tín hiệu",
+  sell_now: "Sell now",
+  switch_channel: "Switch channel",
+  preserve: "Preserve (BioFresh Protocol)",
+  process: "Send to processing",
+  hold: "Hold for a better signal",
 };
 
 export type Urgency = "low" | "medium" | "high";
 
 export const URGENCY_LABEL: Record<Urgency, string> = {
-  low: "Bình thường",
-  medium: "Cần theo dõi",
-  high: "Khẩn cấp",
+  low: "Normal",
+  medium: "Watch",
+  high: "Urgent",
 };
 
 export interface DecisionOption {
@@ -337,20 +353,20 @@ export interface DecisionOption {
   kind: DecisionKind;
   label: string;
   detail: string;
-  /** Giá trị ròng dự kiến (VND) = doanh thu dự kiến - chi phí thêm. */
+  /** Expected net value (VND) = expected revenue − extra cost. */
   netValue: number;
   extraCost: number;
-  /** Số ngày dự kiến thu được tiền. */
+  /** Days until the cash is expected to land. */
   cashInDays: number;
   risk: Urgency;
   riskNote: string;
-  /** Nguồn số liệu: đơn hàng / tín hiệu thị trường / giá tham chiếu nội bộ. */
+  /** Data source: orders / market signals / internal reference price. */
   basis: string;
   requiresProtocol: boolean;
   /**
-   * Khả năng thực hiện được phương án (0–1): đã có người mua xác định hay chưa.
-   * Giá trị ròng nhân với hệ số này ra giá trị kỳ vọng — tránh việc phương án
-   * "giữ hàng" trông đẹp nhất chỉ vì chưa ai trả giá.
+   * How likely the option is to actually happen (0–1): is there a confirmed
+   * buyer or not. Net value times this factor gives the expected value, which
+   * stops "hold" from looking best simply because nobody has bid yet.
    */
   certainty: number;
   certaintyNote: string;
@@ -369,7 +385,7 @@ export interface DecisionCase {
   grade: Grade;
   unallocatedKg: number;
   urgency: Urgency;
-  /** Hạn phải hành động (do cấu hình nội bộ, không phải mô hình dự báo). */
+  /** Action deadline (internal configuration, not a forecasting model). */
   actionDeadline: string;
   options: DecisionOption[];
   chosenOptionId?: string;
@@ -379,7 +395,7 @@ export interface DecisionCase {
   createdAt: string;
 }
 
-// ---------- Cảnh báo ----------
+// ---------- Alerts ----------
 
 export type AlertKind =
   | "order_shortage"
@@ -394,17 +410,17 @@ export interface Alert {
   severity: Urgency;
   title: string;
   detail: string;
-  /** Vai trò cần thấy cảnh báo này. */
+  /** Roles that need to see this alert. */
   roles: Role[];
   href?: string;
 }
 
-// ---------- Cấu hình HTX ----------
+// ---------- Co-op configuration ----------
 
 export interface CoopConfig {
   coopName: string;
-  /** Ngưỡng kg chưa phân bổ để mở ca quyết định. */
+  /** Unallocated kg threshold that opens a decision case. */
   surplusThresholdKg: number;
-  /** Số giờ trước hạn hành động thì coi là khẩn cấp. */
+  /** Hours before the action deadline at which a lot counts as urgent. */
   urgentWithinHours: number;
 }

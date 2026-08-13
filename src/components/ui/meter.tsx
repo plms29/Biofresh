@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-/** Thanh tỉ lệ đơn giản, dùng cho tiến độ hái / lấp đầy đơn hàng. */
+/** Simple ratio bar — used for picking progress and order fill. */
 export function Meter({
   value,
   max = 100,
@@ -28,7 +28,10 @@ export function Meter({
       aria-valuemax={100}
     >
       <div
-        className={cn("h-full rounded-full transition-all duration-500", bar)}
+        className={cn(
+          "h-full rounded-full transition-[width] duration-300 ease-[var(--ease-out)]",
+          bar
+        )}
         style={{ width: `${pct}%` }}
       />
     </div>

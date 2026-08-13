@@ -75,7 +75,7 @@ export function Kpi({
   icon?: React.ComponentType<{ className?: string }>;
 }) {
   const tones = {
-    neutral: "bg-card ring-foreground/10",
+    neutral: "bg-card ring-foreground/10 shadow-[var(--shadow-e1)]",
     leaf: "bg-leaf-50 ring-leaf-200",
     sun: "bg-sun-100 ring-sun-300/70",
     risk: "bg-risk-100 ring-risk-300/70",
@@ -96,9 +96,11 @@ export function Kpi({
         </p>
         {Icon ? <Icon className={cn("size-4", iconTone)} /> : null}
       </div>
-      <p className="tnum mt-2 font-heading text-2xl font-semibold">{value}</p>
+      <p className="tnum mt-2 font-heading text-[1.65rem] leading-none font-semibold tracking-tight">
+        {value}
+      </p>
       {sub ? (
-        <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
+        <p className="mt-1.5 text-xs text-muted-foreground">{sub}</p>
       ) : null}
     </div>
   );
@@ -116,9 +118,13 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border px-6 py-10 text-center">
-      {Icon ? <Icon className="size-6 text-muted-foreground" /> : null}
-      <p className="font-medium">{title}</p>
+    <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-card/40 px-6 py-12 text-center">
+      {Icon ? (
+        <span className="mb-1 flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+          <Icon className="size-5" />
+        </span>
+      ) : null}
+      <p className="font-heading font-medium">{title}</p>
       {hint ? (
         <p className="max-w-sm text-sm text-muted-foreground">{hint}</p>
       ) : null}

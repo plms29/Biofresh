@@ -2,9 +2,9 @@ import { GRADE_LABEL, type BuyerSpec, type PickingGuide, type ProductKey } from 
 import { PRODUCTS } from "./catalog";
 
 /**
- * Sinh hướng dẫn hái trực quan từ tiêu chuẩn khách mua.
- * Đây là cầu nối "tiêu chuẩn buyer xuống được field": Bán hàng chỉ nhập tiêu chuẩn,
- * ngoài vườn luôn thấy bản rút gọn mới nhất.
+ * Turns the buyer specification into a short, visual picking guide.
+ * This is the bridge that carries the buyer standard down to the field:
+ * Sales enters the spec once, and the field always sees the latest summary.
  */
 export function buildPickingGuide(
   product: ProductKey,
@@ -15,41 +15,41 @@ export function buildPickingGuide(
   const meta = PRODUCTS[product];
   const size =
     spec.sizeMinMm && spec.sizeMaxMm
-      ? `Đường kính ${spec.sizeMinMm}–${spec.sizeMaxMm} mm`
+      ? `Diameter ${spec.sizeMinMm}–${spec.sizeMaxMm} mm`
       : spec.sizeMinMm
-        ? `Đường kính từ ${spec.sizeMinMm} mm trở lên`
+        ? `Diameter ${spec.sizeMinMm} mm and above`
         : spec.sizeMaxMm
-          ? `Đường kính tối đa ${spec.sizeMaxMm} mm`
-          : "Kích thước đều tay, không lẫn trái quá nhỏ";
+          ? `Diameter up to ${spec.sizeMaxMm} mm`
+          : "Even sizing — no undersized fruit mixed in";
 
   const color = spec.colorNote?.trim()
     ? spec.colorNote.trim()
     : spec.grade === "A"
-      ? "Màu chín đều, không đốm, cuống còn tươi"
-      : "Màu chín tương đối đều, cho phép sai màu nhẹ";
+      ? "Evenly ripe colour, no blemishes, stem still fresh"
+      : "Fairly even colour, slight variation allowed";
 
   const doList: string[] = [
-    `Chỉ hái trái đạt ${GRADE_LABEL[spec.grade]}: ${color.toLowerCase()}`,
+    `Pick only fruit meeting ${GRADE_LABEL[spec.grade]}: ${color.toLowerCase()}`,
     size,
-    "Đặt nhẹ vào sọt, lót đáy, không xếp quá 3 lớp",
-    "Hái theo lô nhỏ và chuyển về kho trong vòng 2 giờ",
+    "Place gently into lined crates, no more than 3 layers deep",
+    "Pick in small lots and move to the packhouse within 2 hours",
   ];
   if (spec.brixMin) {
-    doList.splice(2, 0, `Ưu tiên trái đủ ngọt (mục tiêu Brix ≥ ${spec.brixMin})`);
+    doList.splice(2, 0, `Favour fully sweet fruit (target Brix ≥ ${spec.brixMin})`);
   }
 
   const dontList: string[] = [
-    "Không hái trái dập, nứt, chảy nước",
-    "Không hái trái còn xanh cứng hoặc đã quá chín mềm",
-    "Không để sọt phơi nắng trực tiếp trên bờ vườn",
+    "No bruised, split or weeping fruit",
+    "No hard green fruit, and nothing overripe or soft",
+    "Never leave crates in direct sun at the edge of the plot",
   ];
   if (spec.rejectNotes?.trim()) {
-    dontList.unshift(`Khách mua từ chối: ${spec.rejectNotes.trim()}`);
+    dontList.unshift(`Buyer rejects: ${spec.rejectNotes.trim()}`);
   }
 
   return {
-    headline: `${meta.emoji} ${meta.label} — ${GRADE_LABEL[spec.grade]}${
-      buyerName ? ` cho ${buyerName}` : ""
+    headline: `${meta.label} — ${GRADE_LABEL[spec.grade]}${
+      buyerName ? ` for ${buyerName}` : ""
     }`,
     colorHint: color,
     sizeHint: size,

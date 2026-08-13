@@ -1,124 +1,140 @@
-# BioFresh OS — Sản phẩm khả dụng tối thiểu
+# BioFresh OS — Minimum Viable Product
 
-Phần mềm vận hành sau thu hoạch cho hợp tác xã nông sản dễ hỏng. Phạm vi bản này
-chỉ xử lý **4 điểm đứt gãy thông tin** và **hỗ trợ quyết định hàng dư thừa**.
+Post-harvest operations software for a co-operative handling perishable produce.
+This release covers exactly two things: **the four information breakdowns** and
+**surplus decision support**.
 
-> Khách mua **không** phải người dùng BioFresh. Họ vẫn gửi đơn và tiêu chuẩn qua
-> Zalo, thư điện tử, điện thoại như hiện tại. Bộ phận Bán hàng nhập vào hệ thống.
-> Khách mua chỉ quét mã QR để xem **Hộ chiếu Quy trình** ở chế độ chỉ xem.
+> Buyers are **not** users of BioFresh. They keep sending orders and specs the way
+> they already do — Zalo, email, phone. Sales enters that into the system. The only
+> thing a buyer ever sees is the **Process Passport**, opened by scanning a QR code,
+> read-only.
 
-## Bốn điểm đứt gãy được giải quyết
+## The four breakdowns this solves
 
-| Đứt gãy | Cách xử lý trong sản phẩm |
+| Breakdown | How the product handles it |
 | --- | --- |
-| Mù thị trường | Bán hàng ghi lại đơn và tín hiệu thị trường vào một chỗ |
-| Bán hàng không thấy tồn kho thật | Kho xác nhận phân loại → tồn kho có thể bán cập nhật ngay |
-| Tiêu chuẩn khách mua không xuống được vườn | Tiêu chuẩn tự chuyển thành hướng dẫn hái trực quan cho ngoài vườn |
-| Hàng dư thừa không được xử lý kịp | Lô con chưa phân bổ vào Phòng quyết định kèm phương án so sánh được |
+| Market blindness | Sales records every order and market signal in one place |
+| Sales cannot see real inventory | The packhouse confirms grading, and sellable inventory updates immediately |
+| Buyer standards never reach the field | The spec becomes a visual picking guide for the field automatically |
+| Surplus is handled too late | Unallocated sub-lots enter the Decision Room with comparable options |
 
-## Bốn vai trò, một cơ sở dữ liệu
+## Four roles, one database
 
-| Vai trò | Màn hình | Thao tác chính |
+| Role | Screen | Primary actions |
 | --- | --- | --- |
-| Bán hàng | `/sales` | Nhập đơn và tiêu chuẩn, nhập tín hiệu thị trường, phân bổ lô |
-| Giám sát ngoài vườn | `/field` | Nhận hướng dẫn hái, cập nhật sản lượng, báo sự cố |
-| Kho đóng gói / Kiểm soát chất lượng | `/packhouse` | Xác nhận nhập kho, nhập hạng thực tế, ghi 6 bước quy trình |
-| Quản lý / Giám đốc HTX | `/manager` | Chốt phương án xử lý hàng dư thừa, xem điều hành, chỉnh cấu hình |
+| Sales | `/sales` | Enter orders and specs, record market signals, allocate batches |
+| Field Supervisor | `/field` | Read the picking guide, update picked weight, report incidents |
+| Packhouse / QC | `/packhouse` | Confirm intake, enter real grades, log the six protocol steps |
+| Manager / Co-op Director | `/manager` | Decide how to clear surplus, watch operations, tune configuration |
 
-Vai trò đi theo màn hình đang mở — đứng ở màn hình kho nghĩa là đang làm việc với
-tư cách kho, nên mọi thao tác đều ghi đúng người thực hiện.
+The active role follows the screen in view — standing on the packhouse screen means
+working as the packhouse, so every action is attributed to the right person.
 
-Ngoài ra: `/batches` danh sách lô, `/batches/[id]` hồ sơ lô đầy đủ kèm mã QR,
-`/p/[id]` Hộ chiếu Quy trình công khai cho khách mua.
+Also: `/batches` batch list, `/batches/[id]` full batch record with its QR code, and
+`/p/[id]` the public Process Passport for buyers.
 
-## Hành trình của một lô hàng
+## A batch's journey
 
 ```
-ĐÃ LÊN KẾ HOẠCH → ĐANG THU HOẠCH → ĐÃ NHẬP KHO → ĐÃ KIỂM SOÁT CHẤT LƯỢNG
-   → ĐÃ PHÂN BỔ / CHƯA PHÂN BỔ → QUYẾT ĐỊNH XỬ LÝ → XỬ LÝ/ĐÓNG GÓI
-   → XUẤT HÀNG → ĐÓNG LÔ
+PLANNED → HARVESTING → RECEIVED → GRADED
+   → ALLOCATED / UNALLOCATED → DECISION PENDING → PROCESSING/PACKING
+   → SHIPPED → CLOSED
 ```
 
-Một lô gốc được tách thành **lô con theo hạng** (Hạng A / Hạng B / Hàng chế biến /
-Hàng loại) ngay khi kho xác nhận kết quả phân loại.
+A source batch splits into **sub-lots by grade** (Grade A / Grade B / Processing /
+Reject) the moment the packhouse confirms the grading result.
 
-## Quy trình Thực địa BioFresh — 6 bước bắt buộc
+## BioFresh Field Protocol — six mandatory steps
 
-`Phân loại → Chuẩn bị dung dịch → Nhúng/Phun → Làm khô → Đóng gói → Đồng bộ dữ liệu`
+`Sorting → Solution prep → Dip/Spray → Drying → Packing → Data sync`
 
-Các bước phải ghi tuần tự, kèm mốc thời gian và người thực hiện. **Không thể đánh
-dấu "Đã hoàn tất xử lý" nếu chưa ghi đủ 6 bước.** Đây chính là nội dung duy nhất
-khách mua thấy khi quét mã QR.
+Steps must be logged in order, each with a timestamp and the person who logged it.
+**A batch cannot be marked "processing complete" until all six are recorded.** This is
+the only content a buyer sees when they scan the QR code.
 
-## Quy tắc cảnh báo
+## Alert rules
 
-Toàn bộ là quy tắc tường minh, **không có mô hình dự báo**:
+All of them are explicit rules — there is **no forecasting model**:
 
-- **Thiếu hàng cho đơn** — tồn kho khả dụng thấp hơn phần còn lại của đơn đã chốt.
-- **Phân bổ vượt số lượng** — đã phân bổ nhiều hơn số lượng đơn yêu cầu.
-- **Hàng dư thừa** — kg đã phân loại nhưng chưa phân bổ vượt ngưỡng HTX cấu hình.
-- **Lô có rủi ro** — sắp tới hạn phải hành động (hạn = thời điểm phân loại + cửa
-  sổ cấu hình của sản phẩm, do người dùng đặt).
-- **Tiêu chuẩn đã cập nhật** — Bán hàng sửa tiêu chuẩn thì hướng dẫn hái tự cập
-  nhật và ngoài vườn được báo.
-- **Quy trình chưa hoàn tất** — lô đang xử lý mà chưa ghi đủ 6 bước.
+- **Order shortage** — available inventory is below what a confirmed order still needs.
+- **Over-allocated** — more has been allocated than the order asked for.
+- **Surplus** — graded but unallocated weight exceeds the co-op's configured threshold.
+- **Batch at risk** — the action deadline is close (deadline = grading time + the
+  product's configured action window, set by a person).
+- **Specification updated** — when Sales edits a spec, the picking guide updates itself
+  and the field is notified.
+- **Protocol incomplete** — a batch is in processing without all six steps logged.
 
-Ngưỡng hàng dư thừa và mốc khẩn cấp chỉnh được ở `/manager` → tab Cấu hình.
+The surplus threshold and the urgency window are editable at `/manager` → Configuration.
 
-## Phòng quyết định
+## Decision Room
 
-Mỗi lô con chưa phân bổ sinh ra 5 phương án: **bán ngay / đổi kênh / bảo quản /
-chế biến / giữ hàng**. Mỗi phương án hiển thị:
+Every unallocated sub-lot produces five options: **sell now / switch channel / preserve /
+send to processing / hold**. Each option shows:
 
-- **Giá trị kỳ vọng** = giá trị ròng × khả năng thực hiện được.
-- Giá trị ròng, chi phí thêm, số ngày thu tiền, mức rủi ro.
-- **Nguồn số liệu** — luôn truy được về đơn hàng, tín hiệu thị trường do Bán hàng
-  nhập, hoặc giá tham chiếu nội bộ.
+- **Expected value** = net value × confidence.
+- Net value, extra cost, days to cash, risk level.
+- **Data source** — always traceable back to an order, a market signal entered by Sales,
+  or the internal reference price.
 
-Khả năng thực hiện phản ánh việc đã có người mua xác định hay chưa. Nhờ vậy phương
-án "giữ hàng" không còn trông đẹp nhất chỉ vì chưa ai trả giá. Nút **Giải thích**
-diễn giải từng phương án bằng lời và so sánh với phương án tốt nhất.
+Confidence reflects whether a confirmed buyer exists. That is what stops "hold" from
+looking like the best option merely because nobody has bid yet. The **Explain** button
+writes out the reasoning for any option and compares it against the strongest one.
 
-Sau khi chốt, hệ thống tự tạo phân bổ tương ứng và sinh **việc cần làm** giao cho
-đúng bộ phận.
+Once a decision is confirmed, the system creates the matching allocation and generates
+**follow-up tasks** assigned to the right role.
 
-## Ngoài phạm vi bản này — KHÔNG xây
+## Out of scope for this release — deliberately NOT built
 
-- Ứng dụng hay tài khoản riêng cho khách mua.
-- Thị giác máy tính tự động phân loại trái cây.
-- Dự báo vệ tinh, dịch bệnh, sản lượng.
-- Mô hình trí tuệ nhân tạo dự báo thời gian tươi còn lại.
-- Kết nối dữ liệu trực tiếp với hệ thống bán hàng của siêu thị.
-- Quản trị nông trại và tính lương đầy đủ.
+- A buyer app or buyer accounts.
+- Computer vision for automatic fruit grading.
+- Satellite, disease or yield forecasting.
+- An AI model predicting remaining freshness.
+- Direct data integration with supermarket systems.
+- Full farm management and payroll.
 
-## Chạy dự án
+## Running the project
 
 ```bash
 npm install
 npm run dev
 ```
 
-Mở http://localhost:3000. Dữ liệu trình diễn được nạp tự động và lưu ở
-`localStorage` của trình duyệt — chưa cần máy chủ hay biến môi trường nào. Nút
-**Đặt lại dữ liệu** ở cuối cột điều hướng nạp lại bộ dữ liệu gốc.
+Open http://localhost:3000. Demo data loads automatically and lives in the browser's
+`localStorage` — no server and no environment variables required. **Reset data** at the
+bottom of the sidebar reloads the original dataset.
 
 ```bash
-npm run build   # dựng bản phát hành
-npx eslint src  # kiểm tra mã
-npx tsc --noEmit
+npm run build     # production build
+npx eslint src    # lint
+npx tsc --noEmit  # typecheck
 ```
 
-## Cấu trúc mã
+## Design system
+
+The interface follows the `ui-ux-pro-max` skill's rules: no emoji as icons (products are
+marked with a coloured two-letter chip), a single Lucide icon family, 44px touch targets
+on phones tightening to a dense layout on desktop, one motion rhythm (150–200ms, ease-out)
+that respects `prefers-reduced-motion`, a four-step elevation scale, semantic colour tokens
+rather than raw hex, and tabular figures everywhere numbers line up in columns.
+
+To reinstall the skill:
+
+```bash
+npx ui-ux-pro-max-cli init --ai claude
+```
+
+## Code layout
 
 ```
 src/
-  app/(app)/          màn hình theo vai trò + danh sách/hồ sơ lô
-  app/p/[id]/         Hộ chiếu Quy trình công khai (không lộ dữ liệu nội bộ)
-  lib/domain/         quy tắc nghiệp vụ thuần: tồn kho, cảnh báo, quyết định,
-                      hướng dẫn hái, quy trình 6 bước
-  store/use-biofresh  trạng thái dùng chung (zustand + persist)
-  components/         giao diện theo vai trò và các khối dùng chung
+  app/(app)/          role screens plus the batch list and batch record
+  app/p/[id]/         public Process Passport (never exposes internal data)
+  lib/domain/         pure business rules: inventory, alerts, decisions,
+                      picking guide, the six-step protocol
+  store/use-biofresh  shared state (zustand + persist)
+  components/         role-specific UI and shared building blocks
 ```
 
-Quy tắc nghiệp vụ nằm tách trong `lib/domain` và không phụ thuộc giao diện — khi
-thay `localStorage` bằng cơ sở dữ liệu thật thì phần này giữ nguyên.
+Business rules live in `lib/domain` and depend on nothing in the UI — swapping
+`localStorage` for a real database leaves that layer untouched.

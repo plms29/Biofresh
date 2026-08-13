@@ -30,43 +30,43 @@ const FLOW = [
   {
     step: "1",
     role: "sales" as Role,
-    title: "Nhập nhu cầu & tiêu chuẩn",
-    text: "Khách mua vẫn gửi đơn qua Zalo, thư điện tử, điện thoại. Bán hàng nhập vào hệ thống.",
+    title: "Capture demand and specification",
+    text: "Buyers still send requests by Zalo, email and phone. Sales enters them into the system once.",
     icon: ShoppingBasket,
   },
   {
     step: "2",
     role: "field" as Role,
-    title: "Hướng dẫn hái trực quan",
-    text: "Tiêu chuẩn khách mua tự chuyển thành hướng dẫn rút gọn cho ngoài vườn.",
+    title: "Visual picking guide",
+    text: "The buyer specification becomes a short picking guide for the field automatically.",
     icon: Sprout,
   },
   {
     step: "3",
     role: "packhouse" as Role,
-    title: "Nhập số lượng & hạng thực tế",
-    text: "Kho đóng gói xác nhận lô và nhập kết quả phân loại bằng tay.",
+    title: "Real quantity and grade",
+    text: "The packhouse confirms the batch and enters the grading result by hand.",
     icon: Warehouse,
   },
   {
     step: "4",
     role: "sales" as Role,
-    title: "Tồn kho thật cập nhật ngay",
-    text: "Bán hàng thấy đúng số kg từng hạng có thể bán, kèm cảnh báo thiếu hàng.",
+    title: "Sellable inventory updates at once",
+    text: "Sales sees exactly how many kg of each grade can be sold, with shortage warnings.",
     icon: PackageSearch,
   },
   {
     step: "5",
     role: "manager" as Role,
-    title: "Phòng quyết định hàng dư thừa",
-    text: "Bán ngay / đổi kênh / bảo quản / chế biến / giữ hàng — có so sánh giá trị ròng.",
+    title: "Decision Room for surplus",
+    text: "Sell now / switch channel / preserve / process / hold — compared by expected value.",
     icon: ClipboardList,
   },
   {
     step: "6",
     role: "packhouse" as Role,
-    title: "Thực thi và đóng lô",
-    text: "Ghi 6 bước Quy trình Thực địa BioFresh, xuất hàng, nhập kết quả thực tế.",
+    title: "Execute and close the batch",
+    text: "Record the six BioFresh Field Protocol steps, ship, and enter the actual result.",
     icon: Boxes,
   },
 ];
@@ -105,36 +105,36 @@ export default function OverviewPage() {
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        eyebrow="Tổng quan chuỗi"
-        title="Một lô hàng, một dòng dữ liệu, bốn vai trò"
-        description="BioFresh chỉ giải bốn điểm đứt gãy: nhu cầu khách mua không xuống được vườn, bán hàng không thấy tồn kho thật, kết quả phân loại không về kịp, và hàng dư thừa không ai quyết. Khách mua không cần đăng nhập — họ chỉ quét QR xem Hộ chiếu Quy trình."
+        eyebrow="Chain overview"
+        title="One batch, one data trail, four roles"
+        description="BioFresh solves four breakages only: buyer requirements never reach the field, Sales cannot see real inventory, grading results arrive too late, and nobody decides what to do with surplus. Buyers need no login — they simply scan a QR code to read the Process Passport."
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi
-          label="Đơn đang mở"
+          label="Open orders"
           value={hydrated ? openOrders.length : "—"}
-          sub={`${state.orders.filter((o) => o.status === "confirmed").length} đơn đã chốt`}
+          sub={`${state.orders.filter((o) => o.status === "confirmed").length} confirmed`}
           icon={ShoppingBasket}
         />
         <Kpi
-          label="Tồn kho có thể bán"
+          label="Sellable inventory"
           value={hydrated ? kg(availableKg) : "—"}
-          sub="Hạng A và B đã kiểm soát chất lượng"
+          sub="Grade A and B, quality checked"
           tone="leaf"
           icon={PackageSearch}
         />
         <Kpi
-          label="Chưa phân bổ"
+          label="Unallocated"
           value={hydrated ? kg(surplusKg) : "—"}
-          sub={`${surplus.length} lô con đang chờ quyết định`}
+          sub={`${surplus.length} sub-lots awaiting a decision`}
           tone="sun"
           icon={Boxes}
         />
         <Kpi
-          label="Tiền đang có nguy cơ"
+          label="Value at risk"
           value={hydrated ? vndShort(atRisk) : "—"}
-          sub="Theo giá tham chiếu nội bộ"
+          sub="At the internal reference price"
           tone="risk"
           icon={Coins}
         />
@@ -142,8 +142,8 @@ export default function OverviewPage() {
 
       <section className="flex flex-col gap-3">
         <SectionTitle
-          title="Luồng vận hành"
-          hint="Mỗi bước là một màn hình theo vai trò, dùng chung một cơ sở dữ liệu."
+          title="Operating flow"
+          hint="Each step is a screen for one role, all working from a single database."
         />
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {FLOW.map((f) => (
@@ -164,7 +164,7 @@ export default function OverviewPage() {
               <p className="mt-3 font-heading text-sm font-semibold">{f.title}</p>
               <p className="mt-1 text-sm text-muted-foreground">{f.text}</p>
               <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-leaf-700 opacity-0 transition-opacity group-hover:opacity-100">
-                Mở màn hình <ArrowRight className="size-3" />
+                Open screen <ArrowRight className="size-3" />
               </span>
             </Link>
           ))}
@@ -175,9 +175,9 @@ export default function OverviewPage() {
         <Card className="lg:col-span-3">
           <CardHeader className="border-b">
             <CardTitle className="flex items-center justify-between">
-              <span>Cảnh báo toàn hệ thống</span>
+              <span>System-wide alerts</span>
               <span className="tnum text-sm font-normal text-muted-foreground">
-                {hydrated ? alerts.length : 0} mục
+                {hydrated ? alerts.length : 0} items
               </span>
             </CardTitle>
           </CardHeader>
@@ -188,7 +188,7 @@ export default function OverviewPage() {
 
         <Card className="lg:col-span-2">
           <CardHeader className="border-b">
-            <CardTitle>Hoạt động gần đây</CardTitle>
+            <CardTitle>Recent activity</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="flex flex-col gap-3">
@@ -216,11 +216,11 @@ export default function OverviewPage() {
           <ClipboardList className="size-5 shrink-0" />
           <div className="flex-1">
             <p className="font-medium">
-              {openCases.length} ca quyết định đang chờ Quản lý
+              {openCases.length} decision cases waiting on the Manager
             </p>
             <p className="text-sm text-white/80">
-              Tổng {kg(openCases.reduce((s, c) => s + c.unallocatedKg, 0))} chưa
-              phân bổ.
+              {kg(openCases.reduce((s, c) => s + c.unallocatedKg, 0))}{" "}
+              unallocated in total.
             </p>
           </div>
           <ArrowRight className="size-4" />

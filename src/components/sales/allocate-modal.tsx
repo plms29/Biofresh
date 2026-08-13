@@ -20,20 +20,20 @@ import { GradeTag } from "@/components/common/badges";
 import { useToast } from "@/components/ui/toast";
 
 export interface AllocateTarget {
-  /** Phân bổ cho một đơn hàng cụ thể. */
+  /** Allocate to a specific order. */
   orderId?: string;
-  /** Hoặc phân bổ trực tiếp cho một kênh bán (xử lý hàng dư thừa). */
+  /** Or allocate straight to a sales channel (clearing surplus). */
   channel?: SalesChannel;
   label: string;
-  /** Giới hạn hạng cần dùng (theo tiêu chuẩn đơn hàng). */
+  /** Restrict to the grade required by the order specification. */
   grade?: Grade;
-  /** Số kg còn thiếu — dùng làm giá trị gợi ý. */
+  /** Kilograms still outstanding — used as the suggested amount. */
   suggestKg?: number;
-  /** Cố định lô nếu mở từ màn hình lô hàng. */
+  /** Pin the batch when opened from a batch screen. */
   batchId?: string;
 }
 
-/** Phân bổ kg từ một lô con đã kiểm soát chất lượng cho đơn hàng hoặc kênh bán. */
+/** Allocates kilograms from a graded sub-lot to an order or a sales channel. */
 export function AllocateModal({
   onClose,
   target,
@@ -63,7 +63,7 @@ export function AllocateModal({
       .sort((a, b) => a.actionDeadline.localeCompare(b.actionDeadline));
   }, [batches, allocations, target, order]);
 
-  // Hộp thoại chỉ được gắn khi mở, nên khởi tạo trực tiếp từ lô con phù hợp đầu tiên.
+  // The modal is only mounted while open, so state is seeded from the first matching sub-lot.
   const firstLot = lots[0];
   const [lotKey, setLotKey] = React.useState(
     firstLot ? `${firstLot.batchId}|${firstLot.grade}` : ""
@@ -83,9 +83,9 @@ export function AllocateModal({
   const selected = lots.find((l) => `${l.batchId}|${l.grade}` === lotKey);
 
   const submit = () => {
-    if (!selected) return setError("Chọn lô con để phân bổ.");
+    if (!selected) return setError("Select a sub-lot to allocate from.");
     const value = Number(amount);
-    if (!value || value <= 0) return setError("Nhập số kg lớn hơn 0.");
+    if (!value || value <= 0) return setError("Enter a quantity greater than 0 kg.");
     const res = allocate({
       batchId: selected.batchId,
       grade: selected.grade,
@@ -105,19 +105,19 @@ export function AllocateModal({
     <Modal
       open
       onClose={onClose}
-      title="Phân bổ hàng"
+      title="Allocate stock"
       description={
         target.orderId
-          ? `Cho đơn ${target.orderId} — ${target.label}`
+          ? `For order ${target.orderId} — ${target.label}`
           : target.label
       }
       footer={
         <>
           <Button variant="outline" size="lg" onClick={onClose}>
-            Huỷ
+            Cancel
           </Button>
           <Button size="lg" onClick={submit} disabled={lots.length === 0}>
-            Phân bổ
+            Allocate
           </Button>
         </>
       }
@@ -131,12 +131,12 @@ export function AllocateModal({
 
         {lots.length === 0 ? (
           <p className="rounded-lg bg-sun-100 px-3 py-2.5 text-sm text-sun-700">
-            Không có lô con khả dụng phù hợp. Cần chờ kho đóng gói xác nhận phân
-            loại hoặc tạo thêm lệnh thu hoạch.
+            No matching sub-lot is available. Wait for the packhouse to confirm
+            grading, or raise another harvest order.
           </p>
         ) : (
           <>
-            <Field label="Lô con khả dụng">
+            <Field label="Available sub-lot">
               <Select value={lotKey} onChange={(e) => setLotKey(e.target.value)}>
                 {lots.map((l) => (
                   <option
@@ -144,7 +144,7 @@ export function AllocateModal({
                     value={`${l.batchId}|${l.grade}`}
                   >
                     {l.batchId} · {GRADE_LABEL[l.grade]} ·{" "}
-                    {PRODUCTS[l.product].label} · còn {l.availableKg} kg
+                    {PRODUCTS[l.product].label} · {l.availableKg} kg left
                   </option>
                 ))}
               </Select>
@@ -161,7 +161,7 @@ export function AllocateModal({
                 <div className="text-right">
                   <GradeTag grade={selected.grade} />
                   <p className="mt-1 text-xs text-muted-foreground">
-                    hạn hành động{" "}
+                    action deadline ·{" "}
                     {now ? untilText(selected.actionDeadline, now) : "—"}
                   </p>
                 </div>
@@ -169,10 +169,10 @@ export function AllocateModal({
             ) : null}
 
             <Field
-              label="Số kg phân bổ"
+              label="Quantity to allocate (kg)"
               hint={
                 selected
-                  ? `Tối đa ${kg(selected.availableKg)} ở lô con này.`
+                  ? `Up to ${kg(selected.availableKg)} available in this sub-lot.`
                   : undefined
               }
             >
@@ -185,7 +185,7 @@ export function AllocateModal({
             </Field>
 
             {!target.orderId ? (
-              <Field label="Kênh bán">
+              <Field label="Sales channel">
                 <Select
                   value={channel}
                   onChange={(e) => setChannel(e.target.value as SalesChannel)}

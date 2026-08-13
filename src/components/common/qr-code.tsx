@@ -4,7 +4,7 @@ import * as React from "react";
 import QRCode from "qrcode";
 import { cn } from "@/lib/utils";
 
-/** Mã QR duy nhất của lô — trỏ tới Hộ chiếu Quy trình ở chế độ chỉ xem. */
+/** The batch's unique QR code — it points to the read-only Process Passport. */
 export function QrCode({
   value,
   size = 176,
@@ -44,11 +44,11 @@ export function QrCode({
       style={{ width: size, height: size }}
     >
       {src ? (
-        // Ảnh QR sinh tại trình duyệt dưới dạng data URL
+        // QR image generated in the browser as a data URL
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={`Mã QR ${value}`} className="size-full" />
+        <img src={src} alt={`QR code ${value}`} className="size-full" />
       ) : (
-        <span className="text-xs text-muted-foreground">Đang tạo mã…</span>
+        <span className="text-xs text-muted-foreground">Generating code…</span>
       )}
     </div>
   );

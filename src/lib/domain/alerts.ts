@@ -24,15 +24,15 @@ export interface AlertInput {
 }
 
 /**
- * Bộ quy tắc cảnh báo của phiên bản đầu (mục 6 của hướng dẫn kỹ thuật).
- * Tất cả đều là quy tắc tường minh, không dùng mô hình dự báo.
+ * The alert rule set for the first release (section 6 of the technical guide).
+ * Every rule is explicit — no forecasting model is involved.
  */
 export function computeAlerts(input: AlertInput): Alert[] {
   const { orders, batches, allocations, harvestOrders, cases, config, now } =
     input;
   const alerts: Alert[] = [];
 
-  // 1. Thiếu hàng cho đơn đã chốt.
+  // 1. Shortage against a confirmed order.
   for (const order of orders.filter((o) => o.status === "confirmed")) {
     const cov = orderCoverage(order, batches, allocations);
     if (cov.shortageKg > 0) {
@@ -40,10 +40,10 @@ export function computeAlerts(input: AlertInput): Alert[] {
         id: `shortage-${order.id}`,
         kind: "order_shortage",
         severity: hoursUntil(order.dueDate, now) < 48 ? "high" : "medium",
-        title: `Thiếu hàng: ${order.buyerName} (${order.id})`,
-        detail: `Còn thiếu ${kg(cov.shortageKg)} ${
+        title: `Shortage: ${order.buyerName} (${order.id})`,
+        detail: `Short by ${kg(cov.shortageKg)} ${
           GRADE_LABEL[order.spec.grade]
-        } ${PRODUCTS[order.product].label}. Hạn giao ${untilText(
+        } ${PRODUCTS[order.product].label}. Delivery deadline: ${untilText(
           order.dueDate,
           now
         )}.`,
@@ -56,17 +56,17 @@ export function computeAlerts(input: AlertInput): Alert[] {
         id: `over-${order.id}`,
         kind: "order_shortage",
         severity: "medium",
-        title: `Phân bổ vượt số lượng: ${order.id}`,
-        detail: `Đã phân bổ ${kg(cov.allocatedKg)} cho đơn ${kg(
+        title: `Over-allocated: ${order.id}`,
+        detail: `${kg(cov.allocatedKg)} allocated against an order of ${kg(
           order.qtyKg
-        )} — vượt ${kg(cov.overAllocatedKg)}.`,
+        )} — ${kg(cov.overAllocatedKg)} too much.`,
         roles: ["sales", "manager"],
         href: "/sales",
       });
     }
   }
 
-  // 2. Hàng dư thừa vượt ngưỡng cấu hình.
+  // 2. Surplus above the configured threshold.
   const lots = unallocatedLots(batches, allocations);
   for (const lot of lots) {
     const decided = cases.find(
@@ -78,8 +78,8 @@ export function computeAlerts(input: AlertInput): Alert[] {
         id: `surplus-${lot.batchId}-${lot.grade}`,
         kind: "surplus",
         severity: "medium",
-        title: `Hàng dư thừa: ${lot.batchId} · ${GRADE_LABEL[lot.grade]}`,
-        detail: `${kg(lot.availableKg)} đã kiểm soát chất lượng nhưng chưa phân bổ (ngưỡng ${kg(
+        title: `Surplus: ${lot.batchId} · ${GRADE_LABEL[lot.grade]}`,
+        detail: `${kg(lot.availableKg)} graded but still unallocated (threshold ${kg(
           config.surplusThresholdKg
         )}).`,
         roles: ["manager", "sales"],
@@ -87,15 +87,15 @@ export function computeAlerts(input: AlertInput): Alert[] {
       });
     }
 
-    // 3. Lô có rủi ro: sắp tới hạn phải hành động.
+    // 3. Batch at risk: the action deadline is close.
     const h = hoursUntil(lot.actionDeadline, now);
     if (h <= config.urgentWithinHours) {
       alerts.push({
         id: `risk-${lot.batchId}-${lot.grade}`,
         kind: "batch_at_risk",
         severity: "high",
-        title: `Lô có rủi ro: ${lot.batchId} · ${GRADE_LABEL[lot.grade]}`,
-        detail: `${kg(lot.availableKg)} chưa phân bổ, hạn phải hành động ${untilText(
+        title: `Batch at risk: ${lot.batchId} · ${GRADE_LABEL[lot.grade]}`,
+        detail: `${kg(lot.availableKg)} unallocated. Action deadline: ${untilText(
           lot.actionDeadline,
           now
         )}.`,
@@ -105,7 +105,7 @@ export function computeAlerts(input: AlertInput): Alert[] {
     }
   }
 
-  // 4. Tiêu chuẩn khách mua đã cập nhật -> hướng dẫn ngoài vườn phải đọc lại.
+  // 4. Buyer specification updated -> the field must re-read the picking guide.
   for (const ho of harvestOrders.filter((h) => h.status !== "done")) {
     if (ho.guide.revision > 0) {
       const order = orders.find((o) => o.id === ho.orderId);
@@ -113,17 +113,17 @@ export function computeAlerts(input: AlertInput): Alert[] {
         id: `spec-${ho.id}-${ho.guide.revision}`,
         kind: "spec_updated",
         severity: "medium",
-        title: `Tiêu chuẩn đã cập nhật: lệnh ${ho.id}`,
-        detail: `Hướng dẫn hái đã được cập nhật lần ${ho.guide.revision}${
-          order ? ` theo tiêu chuẩn mới của ${order.buyerName}` : ""
-        }. Ngoài vườn cần đọc lại trước khi hái.`,
+        title: `Specification updated: harvest order ${ho.id}`,
+        detail: `The picking guide has been revised ${ho.guide.revision} time(s)${
+          order ? ` to match the new specification from ${order.buyerName}` : ""
+        }. The field team must re-read it before picking.`,
         roles: ["field", "manager"],
         href: "/field",
       });
     }
   }
 
-  // 5. Quy trình chưa hoàn tất trong khi lô đang ở bước xử lý.
+  // 5. Protocol incomplete while the batch is already being processed.
   for (const batch of batches.filter((b) => b.status === "processing")) {
     if (!isProtocolComplete(batch)) {
       const done = batch.protocol.filter((s) => s.status === "done").length;
@@ -131,8 +131,8 @@ export function computeAlerts(input: AlertInput): Alert[] {
         id: `protocol-${batch.id}`,
         kind: "protocol_incomplete",
         severity: "medium",
-        title: `Quy trình chưa hoàn tất: ${batch.id}`,
-        detail: `Đã ghi ${done}/6 bước Quy trình Thực địa BioFresh. Chưa thể đánh dấu hoàn tất xử lý.`,
+        title: `Protocol incomplete: ${batch.id}`,
+        detail: `${done}/6 steps of the BioFresh Field Protocol recorded. Processing cannot be marked complete yet.`,
         roles: ["packhouse", "manager"],
         href: `/batches/${batch.id}`,
       });
