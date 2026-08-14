@@ -3,11 +3,14 @@ import {
   type Batch,
   type CoopConfig,
   type DecisionCase,
+  type Farmer,
   type HarvestOrder,
   type MarketSignal,
   type Order,
+  type PickingEntry,
   type ProtocolStep,
   type ProtocolStepKey,
+  type SustainabilityRecord,
 } from "@/types";
 import { buildPickingGuide } from "./domain/guide";
 import { emptyProtocol, PROTOCOL_STEPS } from "./domain/protocol";
@@ -16,10 +19,13 @@ export interface SeedData {
   config: CoopConfig;
   orders: Order[];
   signals: MarketSignal[];
+  farmers: Farmer[];
   harvestOrders: HarvestOrder[];
+  pickingEntries: PickingEntry[];
   batches: Batch[];
   allocations: Allocation[];
   cases: DecisionCase[];
+  sustainability: SustainabilityRecord[];
 }
 
 const HOUR = 3_600_000;
@@ -161,6 +167,46 @@ export function buildSeed(now: number): SeedData {
     },
   ];
 
+  // The picking team. Plots are the ones each person usually works, which is
+  // what puts their own jobs at the top of their picking screen.
+  const farmers: Farmer[] = [
+    {
+      id: "ND-01",
+      name: "Nguyen Van Tuan",
+      code: "TU",
+      plots: ["Plot A1 — Tuan household", "Plot A2 — Tuan household"],
+      active: true,
+    },
+    {
+      id: "ND-02",
+      name: "Tran Thi Lien",
+      code: "LI",
+      plots: ["Plot C1 — Lien household"],
+      active: true,
+    },
+    {
+      id: "ND-03",
+      name: "Le Van Sau",
+      code: "SA",
+      plots: ["Plot C2 — Sau household"],
+      active: true,
+    },
+    {
+      id: "ND-04",
+      name: "Pham Thi Thanh",
+      code: "TH",
+      plots: ["Plot B4 — Thanh household"],
+      active: true,
+    },
+    {
+      id: "ND-05",
+      name: "Hoang Van Binh",
+      code: "BI",
+      plots: ["Plot D3 — Long Binh Co-op"],
+      active: true,
+    },
+  ];
+
   const harvestOrders: HarvestOrder[] = [
     {
       id: "LTH-501",
@@ -177,6 +223,7 @@ export function buildSeed(now: number): SeedData {
       ),
       status: "in_progress",
       pickedKg: 180,
+      assignedFarmerIds: ["ND-01", "ND-04"],
       incidents: [
         {
           id: "SC-1",
@@ -203,6 +250,7 @@ export function buildSeed(now: number): SeedData {
       ),
       status: "pending",
       pickedKg: 0,
+      assignedFarmerIds: ["ND-02", "ND-03"],
       incidents: [],
       createdAt: iso(-8 * HOUR),
     },
@@ -216,6 +264,7 @@ export function buildSeed(now: number): SeedData {
       guide: buildPickingGuide("strawberry", orders[0].spec, 0),
       status: "done",
       pickedKg: 392,
+      assignedFarmerIds: ["ND-01"],
       incidents: [],
       createdAt: iso(-3 * DAY),
       startedAt: iso(-2 * DAY),
@@ -231,11 +280,22 @@ export function buildSeed(now: number): SeedData {
       guide: buildPickingGuide("dragon_fruit", orders[2].spec, 0),
       status: "done",
       pickedKg: 880,
+      assignedFarmerIds: ["ND-05"],
       incidents: [],
-      createdAt: iso(-5 * DAY),
+      createdAt: iso(-3 * DAY),
       startedAt: iso(-4 * DAY),
       finishedAt: iso(-3 * DAY),
     },
+  ];
+
+  // Entries behind LTH-501's 180 kg: two pickers, three size bands, so the
+  // supervisor screen has something real to show on first open.
+  const pickingEntries: PickingEntry[] = [
+    { id: "PE-01", harvestOrderId: "LTH-501", farmerId: "ND-01", product: "strawberry", band: "L", kg: 42, at: iso(-5 * HOUR) },
+    { id: "PE-02", harvestOrderId: "LTH-501", farmerId: "ND-01", product: "strawberry", band: "M", kg: 35, at: iso(-4 * HOUR) },
+    { id: "PE-03", harvestOrderId: "LTH-501", farmerId: "ND-04", product: "strawberry", band: "L", kg: 28, at: iso(-4 * HOUR) },
+    { id: "PE-04", harvestOrderId: "LTH-501", farmerId: "ND-04", product: "strawberry", band: "M", kg: 51, at: iso(-2 * HOUR) },
+    { id: "PE-05", harvestOrderId: "LTH-501", farmerId: "ND-01", product: "strawberry", band: "S", kg: 24, at: iso(-1 * HOUR) },
   ];
 
   const proto = (doneKeys: ProtocolStepKey[], base: number): ProtocolStep[] =>
@@ -374,5 +434,50 @@ export function buildSeed(now: number): SeedData {
 
   const cases: DecisionCase[] = [];
 
-  return { config, orders, signals, harvestOrders, batches, allocations, cases };
+  // One closed batch already has a history worth showing on the manager screen.
+  const sustainability: SustainabilityRecord[] = [
+    {
+      id: "SR-01",
+      batchId: "BF-2607-24",
+      product: "avocado",
+      grade: "A",
+      kg: 205,
+      outcome: "sold",
+      note: "Accepted in full by the buyer on batch BF-2607-24.",
+      at: iso(-4 * DAY),
+    },
+    {
+      id: "SR-02",
+      batchId: "BF-2607-24",
+      product: "avocado",
+      grade: "PROCESS",
+      kg: 10,
+      outcome: "processed",
+      note: 'Surplus routed via "Send to processing".',
+      at: iso(-4 * DAY),
+    },
+    {
+      id: "SR-03",
+      batchId: "BF-2607-24",
+      product: "avocado",
+      grade: "REJECT",
+      kg: 5,
+      outcome: "wasted",
+      note: "Failed grading — no route available.",
+      at: iso(-4 * DAY),
+    },
+  ];
+
+  return {
+    config,
+    orders,
+    signals,
+    farmers,
+    harvestOrders,
+    pickingEntries,
+    batches,
+    allocations,
+    cases,
+    sustainability,
+  };
 }

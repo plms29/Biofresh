@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   AlertTriangle,
   Check,
   CircleDot,
   Minus,
-  Plus,
   RefreshCw,
+  Smartphone,
   Sprout,
   Timer,
 } from "lucide-react";
@@ -17,12 +18,12 @@ import { useHydrated, useNow } from "@/hooks/use-client-state";
 import { PRODUCTS } from "@/lib/domain/catalog";
 import { dt, kg, untilText } from "@/lib/domain/format";
 import { EmptyState, Kpi, PageHeader } from "@/components/common/layout-bits";
+import { TeamPanel } from "@/components/field/team-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Meter } from "@/components/ui/meter";
 import { Modal } from "@/components/ui/modal";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Field } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
@@ -33,15 +34,12 @@ export default function FieldPage() {
   const harvestOrders = useBio((s) => s.harvestOrders);
   const orders = useBio((s) => s.orders);
   const startHarvest = useBio((s) => s.startHarvest);
-  const updatePicked = useBio((s) => s.updatePicked);
   const finishHarvest = useBio((s) => s.finishHarvest);
   const reportIncident = useBio((s) => s.reportIncident);
   const { toast } = useToast();
 
   const [incidentFor, setIncidentFor] = React.useState<HarvestOrder | null>(null);
   const [incidentNote, setIncidentNote] = React.useState("");
-  const [amountFor, setAmountFor] = React.useState<HarvestOrder | null>(null);
-  const [amount, setAmount] = React.useState("");
 
   const active = harvestOrders
     .filter((h) => h.status !== "done")
@@ -55,7 +53,14 @@ export default function FieldPage() {
       <PageHeader
         eyebrow="Today's harvest"
         title="Pick to the buyer's standard"
-        description="Every order below is a short summary of the buyer specification. Update the kg picked and the packhouse and Sales see it straight away."
+        description="Put a team on each job, and the weights they record at the plot land here, in the packhouse and on the Sales desk straight away."
+        actions={
+          <Button variant="outline" size="lg" asChild>
+            <Link href="/pick" target="_blank">
+              <Smartphone /> Open the picking screen
+            </Link>
+          </Button>
+        }
       />
 
       <div className="grid gap-3 sm:grid-cols-3">
@@ -180,6 +185,10 @@ export default function FieldPage() {
                     <Meter value={pct} tone={pct >= 100 ? "leaf" : "sun"} />
                   </div>
 
+                  {/* Weights come from the pickers' own screen; the supervisor
+                      assigns the team and watches it add up. */}
+                  <TeamPanel job={ho} />
+
                   <div className="flex flex-wrap gap-2">
                     {ho.status === "pending" ? (
                       <Button
@@ -192,32 +201,6 @@ export default function FieldPage() {
                         Start picking
                       </Button>
                     ) : null}
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      onClick={() => updatePicked(ho.id, ho.pickedKg + 10)}
-                    >
-                      <Plus /> 10 kg
-                    </Button>
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      onClick={() =>
-                        updatePicked(ho.id, Math.max(0, ho.pickedKg - 10))
-                      }
-                    >
-                      <Minus /> 10 kg
-                    </Button>
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      onClick={() => {
-                        setAmountFor(ho);
-                        setAmount(String(ho.pickedKg));
-                      }}
-                    >
-                      Enter kg
-                    </Button>
                     <Button
                       size="lg"
                       variant="outline"
@@ -321,43 +304,6 @@ export default function FieldPage() {
         </Field>
       </Modal>
 
-      {/* Enter the kg picked */}
-      <Modal
-        open={amountFor !== null}
-        onClose={() => setAmountFor(null)}
-        title={`Update quantity picked — ${amountFor?.id ?? ""}`}
-        footer={
-          <>
-            <Button variant="outline" size="lg" onClick={() => setAmountFor(null)}>
-              Cancel
-            </Button>
-            <Button
-              size="lg"
-              onClick={() => {
-                if (!amountFor) return;
-                updatePicked(amountFor.id, Number(amount) || 0);
-                toast("Quantity picked updated.");
-                setAmountFor(null);
-              }}
-            >
-              Save
-            </Button>
-          </>
-        }
-      >
-        <Field
-          label="Kilograms picked"
-          hint={amountFor ? `Target ${kg(amountFor.targetKg)}` : undefined}
-        >
-          <Input
-            type="number"
-            inputMode="decimal"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            className="h-12 text-lg"
-          />
-        </Field>
-      </Modal>
     </div>
   );
 }

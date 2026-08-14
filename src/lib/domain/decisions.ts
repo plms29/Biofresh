@@ -2,6 +2,7 @@ import {
   DECISION_LABEL,
   GRADE_LABEL,
   SALES_CHANNEL_LABEL,
+  type CaseOrigin,
   type CoopConfig,
   type DecisionCase,
   type DecisionOption,
@@ -19,6 +20,7 @@ const COST_PER_KG = {
   transportSpot: 1200,
   transportChannel: 2000,
   preserve: 3500, // solution + labour + drying + repacking
+  dry: 9000, // fuel, trays, labour and packing — charged per kg of *fresh* input
   process: 2500, // haulage to the processing plant
   hold: 300, // ambient storage
 };
@@ -173,7 +175,35 @@ export function buildOptions(
       "The grade is preserved, but an order still has to be found afterwards.",
   });
 
-  // 4. Processing — guaranteed offtake at a low price.
+  // 4. Drying — turns a perishable problem into a shelf-stable product. The
+  //    yield is brutal (roughly 10 kg fresh to 1 kg dried) but the dried price
+  //    is high enough that it can still beat wholesale, and the deadline stops
+  //    mattering once the fruit is dry.
+  const driedKg = qty * meta.dryYield;
+  const dryCost = qty * COST_PER_KG.dry;
+  options.push({
+    id: "dry",
+    kind: "dry",
+    label: DECISION_LABEL.dry,
+    detail: `Dry all ${kg(qty)} into about ${kg(driedKg)} of dried ${
+      meta.label.toLowerCase()
+    } at ${vnd(meta.driedPrice)}/kg. Yield is ${Math.round(
+      meta.dryYield * 100
+    )}%, but the result keeps for months, so the action deadline stops applying.`,
+    netValue: driedKg * meta.driedPrice - dryCost,
+    extraCost: dryCost,
+    cashInDays: 20,
+    risk: "medium",
+    riskNote:
+      "Ties up the dryer and the cash for weeks, and dried stock still has to be sold.",
+    basis: "Dried yield and dried price from the internal catalogue",
+    requiresProtocol: false,
+    certainty: 0.8,
+    certaintyNote:
+      "The process itself is reliable; finding a buyer for dried stock is the open part.",
+  });
+
+  // 5. Processing — guaranteed offtake at a low price.
   const procPrice = meta.refPrice.PROCESS;
   const procCost = qty * COST_PER_KG.process;
   options.push({
@@ -195,7 +225,7 @@ export function buildOptions(
     certaintyNote: "The plant takes the full volume, so the sale is near certain.",
   });
 
-  // 5. Hold for a better signal — only sensible when there is still plenty of time.
+  // 6. Hold for a better signal — only sensible when there is still plenty of time.
   const holdCost = qty * COST_PER_KG.hold;
   options.push({
     id: "hold",
@@ -239,13 +269,20 @@ export function expectedValue(option: DecisionOption): number {
  * The option the system recommends: the highest expected value, discounted for
  * risk and for tied-up capital (1% per day of expected value).
  */
+export function riskAdjustedValue(option: DecisionOption): number {
+  const riskFactor =
+    option.risk === "high" ? 0.6 : option.risk === "medium" ? 0.85 : 1;
+  return (
+    expectedValue(option) *
+    riskFactor *
+    (1 - Math.min(0.3, option.cashInDays * 0.01))
+  );
+}
+
 export function recommendedOption(options: DecisionOption[]): DecisionOption {
-  const score = (o: DecisionOption) => {
-    const ev = expectedValue(o);
-    const riskFactor = o.risk === "high" ? 0.6 : o.risk === "medium" ? 0.85 : 1;
-    return ev * riskFactor * (1 - Math.min(0.3, o.cashInDays * 0.01));
-  };
-  return [...options].sort((a, b) => score(b) - score(a))[0];
+  return [...options].sort(
+    (a, b) => riskAdjustedValue(b) - riskAdjustedValue(a)
+  )[0];
 }
 
 /** A rule-based explanation — no external model is called, and every line is traceable. */
@@ -336,6 +373,12 @@ export function tasksForOption(
         ),
         base(`Find an order for the ${kg(lot.availableKg)} now preserved`, "sales"),
       ];
+    case "dry":
+      return [
+        base(`Load the dryer with ${kg(lot.availableKg)} from batch ${lot.batchId}`, "packhouse"),
+        base(`Weigh and pack the dried output, then label it`, "packhouse"),
+        base(`Find a buyer for the dried stock`, "sales"),
+      ];
     case "process":
       return [
         base(`Confirm the order with the processing plant`, "sales"),
@@ -355,7 +398,8 @@ export function buildDecisionCase(
   orders: Order[],
   signals: MarketSignal[],
   config: CoopConfig,
-  now: number
+  now: number,
+  origin: CaseOrigin = "surplus"
 ): DecisionCase {
   return {
     id: `DC-${lot.batchId}-${lot.grade}`,
@@ -367,6 +411,7 @@ export function buildDecisionCase(
     options: buildOptions(lot, orders, signals, config, now),
     tasks: [],
     createdAt: new Date(now).toISOString(),
+    origin,
   };
 }
 

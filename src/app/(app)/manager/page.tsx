@@ -25,6 +25,7 @@ import { GradeTag } from "@/components/common/badges";
 import { ProductLabel } from "@/components/common/product-mark";
 import { AlertList } from "@/components/common/alert-list";
 import { DecisionCaseCard } from "@/components/manager/decision-case-card";
+import { SustainabilityPanel } from "@/components/manager/sustainability-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Segmented } from "@/components/ui/segmented";
@@ -280,6 +281,8 @@ export default function ManagerPage() {
                 </ul>
               </CardContent>
             </Card>
+
+            {hydrated ? <SustainabilityPanel /> : null}
 
             <Card>
               <CardHeader className="border-b">

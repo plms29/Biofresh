@@ -95,14 +95,26 @@ Once a decision is confirmed, the system creates the matching allocation and gen
 
 ## Running the project
 
+Data is shared through Supabase, in its own `biofresh` schema so it can sit inside a
+Supabase project used by other apps without colliding with them.
+
+1. Run `supabase/migrations/0001_biofresh_init.sql` once, in that project's
+   **SQL Editor** (the anon key used at runtime can't run `CREATE TABLE`).
+2. In **Settings → API**, add `biofresh` to **Exposed schemas** — PostgREST only serves
+   schemas listed there.
+3. Copy `.env.example` to `.env` and fill in the project's URL and anon key from
+   **Settings → API**.
+
 ```bash
 npm install
 npm run dev
 ```
 
-Open http://localhost:3000. Demo data loads automatically and lives in the browser's
-`localStorage` — no server and no environment variables required. **Reset data** at the
-bottom of the sidebar reloads the original dataset.
+Open http://localhost:3000. The first device to open the app seeds the demonstration
+dataset and publishes it to Supabase; every device after that adopts the same data, and
+changes made on one device appear on the others without a manual refresh (Supabase
+Realtime). **Reset data** at the bottom of the sidebar clears the shared dataset for
+everyone and reloads a fresh one — it asks for confirmation first because of that.
 
 ```bash
 npm run build     # production build
@@ -132,9 +144,15 @@ src/
   app/p/[id]/         public Process Passport (never exposes internal data)
   lib/domain/         pure business rules: inventory, alerts, decisions,
                       picking guide, the six-step protocol
-  store/use-biofresh  shared state (zustand + persist)
+  lib/supabase/       client, row<->domain mappers, and the sync layer
+                      (pull on load, diff-and-push on every change, realtime
+                      merge for changes made on other devices)
+  store/use-biofresh  shared state (zustand); every action is unchanged from
+                      the localStorage version — only the storage layer moved
   components/         role-specific UI and shared building blocks
 ```
 
-Business rules live in `lib/domain` and depend on nothing in the UI — swapping
-`localStorage` for a real database leaves that layer untouched.
+Business rules live in `lib/domain` and depend on nothing in the UI or the storage
+layer. Store actions don't know Supabase exists either — they call the same `set`
+they always did; a thin wrapper around it is what pushes each change to the shared
+database (see the comment at the top of `src/store/use-biofresh.ts`).

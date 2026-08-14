@@ -59,6 +59,31 @@ export type ProductTone =
   | "olive"
   | "violet";
 
+/**
+ * Size band recorded in the field by the person picking. This is a different
+ * axis from `Grade`: size is what a picker can judge by eye and hand at the
+ * bush, grade is a quality call the packhouse makes later. One plot grows
+ * several products, and one product comes off the plant in several sizes, so
+ * pickers record both.
+ */
+export type SizeBand = "L" | "M" | "S";
+
+export const SIZE_BAND_LABEL: Record<SizeBand, string> = {
+  L: "Large",
+  M: "Medium",
+  S: "Small",
+};
+
+export interface SizeBandDef {
+  key: SizeBand;
+  /** Plain-language size cue, e.g. "35 mm and up" or "over 500 g". */
+  hint: string;
+  /** Set only for products a buyer specifies in millimetres, so the picking
+   *  screen can mark which band matches the order. */
+  minMm?: number;
+  maxMm?: number;
+}
+
 export interface ProductMeta {
   key: ProductKey;
   label: string;
@@ -70,6 +95,45 @@ export interface ProductMeta {
   actionWindowHours: number;
   /** Internal reference price recorded by the co-op (VND/kg) per grade. */
   refPrice: Record<Grade, number>;
+  /** Largest first — the picking screen renders them in this order. */
+  sizeBands: SizeBandDef[];
+  /** Kilograms of dried product from one kilogram fresh. */
+  dryYield: number;
+  /** What a kilogram of the dried product fetches (VND/kg). */
+  driedPrice: number;
+}
+
+// ---------- Pickers ----------
+
+/**
+ * Someone who physically picks. Not a system user: there is no login, no
+ * password, no email. A picker taps their own name on a shared phone at the
+ * plot, and the Field Supervisor manages the roster.
+ */
+export interface Farmer {
+  id: string;
+  name: string;
+  /** Short code printed on crate labels and shown on the picking screen. */
+  code: string;
+  /** Plots this person usually works — used to sort their jobs first. */
+  plots: string[];
+  active: boolean;
+}
+
+/**
+ * One weighing recorded at the plot: this picker, this harvest order, this
+ * size band, this many kilograms. Kept as separate entries rather than a
+ * running total so a mistake can be undone without recomputing anyone's day,
+ * and so the supervisor can see who picked what.
+ */
+export interface PickingEntry {
+  id: string;
+  harvestOrderId: string;
+  farmerId: string;
+  product: ProductKey;
+  band: SizeBand;
+  kg: number;
+  at: string;
 }
 
 /** Quality grade entered by hand at the packhouse. */
@@ -206,7 +270,11 @@ export interface HarvestOrder {
   orderId?: string;
   guide: PickingGuide;
   status: HarvestOrderStatus;
+  /** Sum of every PickingEntry on this order — recomputed on each entry, never
+   *  edited directly, so the total and the per-picker detail can't drift apart. */
   pickedKg: number;
+  /** The team the Field Supervisor put on this job. */
+  assignedFarmerIds: string[];
   incidents: HarvestIncident[];
   createdAt: string;
   startedAt?: string;
@@ -329,6 +397,7 @@ export type DecisionKind =
   | "sell_now"
   | "switch_channel"
   | "preserve"
+  | "dry"
   | "process"
   | "hold";
 
@@ -336,6 +405,7 @@ export const DECISION_LABEL: Record<DecisionKind, string> = {
   sell_now: "Sell now",
   switch_channel: "Switch channel",
   preserve: "Preserve (BioFresh Protocol)",
+  dry: "Dry it",
   process: "Send to processing",
   hold: "Hold for a better signal",
 };
@@ -379,6 +449,14 @@ export interface DecisionTask {
   done: boolean;
 }
 
+/** Why a decision case was opened. */
+export type CaseOrigin = "surplus" | "buyer_rejection";
+
+export const CASE_ORIGIN_LABEL: Record<CaseOrigin, string> = {
+  surplus: "Unsold surplus",
+  buyer_rejection: "Returned by the buyer",
+};
+
 export interface DecisionCase {
   id: string;
   batchId: string;
@@ -393,6 +471,62 @@ export interface DecisionCase {
   decidedBy?: string;
   tasks: DecisionTask[];
   createdAt: string;
+  /** Surplus that never sold, or stock the buyer sent back after delivery. */
+  origin: CaseOrigin;
+}
+
+// ---------- Decision Room assistant ----------
+
+/**
+ * What the Gemini assistant returns for one decision case.
+ *
+ * The assistant never invents figures. Every number in the Decision Room is
+ * computed by `lib/domain/decisions.ts` from orders, market signals and the
+ * internal reference price; the assistant only reads those options and argues
+ * about them. `recommendedOptionId` must be one of the options it was given —
+ * anything else is rejected by the API route.
+ */
+export interface AdvisorVerdict {
+  recommendedOptionId: string;
+  /** Why this option, in the manager's language. */
+  reasoning: string;
+  /** What could go wrong with the recommendation. */
+  watchOut: string;
+  /** What demand looks like from the open orders and live signals it was shown. */
+  demandOutlook: string;
+  /** Model's own confidence in the call, 0–1. */
+  confidence: number;
+  /** Set when the assistant disagrees with the rule-based pick. */
+  disagreesWithRules: boolean;
+}
+
+// ---------- Sustainability ----------
+
+export type SustainabilityOutcome = "sold" | "preserved" | "dried" | "processed" | "wasted";
+
+export const SUSTAINABILITY_LABEL: Record<SustainabilityOutcome, string> = {
+  sold: "Sold fresh",
+  preserved: "Preserved and sold later",
+  dried: "Dried",
+  processed: "Sent to processing",
+  wasted: "Lost",
+};
+
+/**
+ * One line in the co-op's record of where produce actually ended up. Written
+ * when a decision is committed and when a batch closes, so "how much did we
+ * keep out of the bin this month" is a query rather than a guess.
+ */
+export interface SustainabilityRecord {
+  id: string;
+  batchId: string;
+  product: ProductKey;
+  grade: Grade;
+  kg: number;
+  outcome: SustainabilityOutcome;
+  /** Free-text trace of what caused this line. */
+  note: string;
+  at: string;
 }
 
 // ---------- Alerts ----------
@@ -413,6 +547,17 @@ export interface Alert {
   /** Roles that need to see this alert. */
   roles: Role[];
   href?: string;
+}
+
+// ---------- Activity log ----------
+
+/** One entry in the Operations Centre activity feed. */
+export interface ActivityEntry {
+  id: string;
+  at: string;
+  role: Role;
+  actor: string;
+  text: string;
 }
 
 // ---------- Co-op configuration ----------

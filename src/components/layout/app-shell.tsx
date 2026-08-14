@@ -11,6 +11,7 @@ import {
   Leaf,
   RotateCcw,
   ShoppingBasket,
+  Smartphone,
   Sprout,
   Warehouse,
 } from "lucide-react";
@@ -178,6 +179,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="border-t border-border px-4 py-4">
+          {/*
+            The two screens that live outside the role shell. Both open in a
+            new tab because neither belongs to the staff navigation: the
+            picking screen is handed to a picker on a shared phone, and the
+            passport is what a buyer sees.
+          */}
+          <Link
+            href="/pick"
+            target="_blank"
+            className="mb-2 flex items-center gap-2 rounded-lg bg-card px-3 py-2.5 text-sm ring-1 ring-foreground/10 transition-colors hover:bg-muted"
+          >
+            <Smartphone className="size-4 text-leaf-700" />
+            <span className="flex-1">Open the picking screen</span>
+          </Link>
           <Link
             href="/p/BF-2608-02"
             className="flex items-center gap-2 rounded-lg bg-leaf-50 px-3 py-2.5 text-sm text-leaf-800 ring-1 ring-leaf-200 transition-colors hover:bg-leaf-100"
@@ -190,8 +205,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             size="sm"
             className="mt-2 w-full justify-start text-muted-foreground"
             onClick={() => {
+              // Data is shared across every device now, so this wipes it
+              // for the whole co-op, not just this browser.
+              if (
+                !window.confirm(
+                  "This clears demonstration data for everyone using BioFresh, not just this device. Continue?"
+                )
+              )
+                return;
               resetDemo();
-              toast("Demo data has been reset.", "info");
+              toast("Demo data has been reset for everyone.", "info");
             }}
           >
             <RotateCcw className="size-3.5" /> Reset data

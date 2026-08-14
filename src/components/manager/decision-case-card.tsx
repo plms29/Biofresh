@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { CheckCircle2, ChevronDown, Info, Sparkles } from "lucide-react";
 import {
+  CASE_ORIGIN_LABEL,
   ROLE_META,
   type DecisionCase,
   type DecisionOption,
@@ -17,6 +18,7 @@ import { kg, untilText, vnd, vndShort } from "@/lib/domain/format";
 import { useBio } from "@/store/use-biofresh";
 import { GradeTag, UrgencyTag } from "@/components/common/badges";
 import { ProductLabel } from "@/components/common/product-mark";
+import { AdvisorPanel } from "@/components/manager/advisor-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
@@ -60,6 +62,11 @@ export function DecisionCaseCard({
               </Link>
               <GradeTag grade={kase.grade} />
               <UrgencyTag urgency={kase.urgency} />
+              {kase.origin === "buyer_rejection" ? (
+                <span className="rounded-full bg-risk-100 px-2 py-0.5 text-xs font-medium text-risk-700 ring-1 ring-inset ring-risk-300">
+                  {CASE_ORIGIN_LABEL.buyer_rejection}
+                </span>
+              ) : null}
             </CardTitle>
             <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
               {batch ? (
@@ -150,6 +157,8 @@ export function DecisionCaseCard({
               ))}
             </div>
 
+            <AdvisorPanel kase={kase} now={now} onFollow={setSelectedId} />
+
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 size="lg"
@@ -165,7 +174,8 @@ export function DecisionCaseCard({
               </Button>
               <p className="text-xs text-muted-foreground">
                 Every figure comes from orders, market signals entered by Sales and
-                the internal reference price — there is no automated forecasting.
+                the internal reference price. The assistant reads those figures; it
+                does not produce them.
               </p>
             </div>
           </>
