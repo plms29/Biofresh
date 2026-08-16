@@ -56,6 +56,47 @@ time to rediscover.
 - **Size band ≠ grade.** `SizeBand` (L/M/S, in `catalog.ts` per product) is what a
   picker judges by eye at the bush; `Grade` (A/B/PROCESS/REJECT) is a quality call the
   packhouse makes later. They are separate axes and must not be collapsed into one.
+- **Every decision option is judged on the same four criteria, and all four are always
+  visible**: profit, cash flow, risk and feasibility (`optionCriteria` in
+  `lib/domain/decisions.ts`). They come straight off the operations diagram, and they exist
+  because a Manager's priority changes by the day — one figure ranked for them hides the
+  trade-off they are actually making. None of the four is a new business number: profit is
+  expected value against the best option on the table, cash flow is `cashInDays`, risk reuses
+  the exact certainty and risk discounts `riskAdjustedValue` is built from, and feasibility
+  reads `workSteps` + `shelfDaysAfter` off the option. The tier words (Strong / Fast / Low
+  risk / Easy) and the 0–1 scores are groupings of those figures, nothing more.
+  - **`workSteps` / `shelfDaysAfter` / `feasibilityNote` are optional on `DecisionOption`.**
+    Cases opened before they shipped are stored in Supabase without them and are never
+    rewritten, so read them through `feasibilityProfile`, which falls back per `DecisionKind`.
+    Same class of problem as the `farmers` incident below — an old row must stay readable.
+  - **`recommendedOption(options)` with no priority is still `riskAdjustedValue`.** A
+    priority argument re-weights the four criteria (leading one at 0.55, the rest 0.15 each);
+    `balanced` deliberately does not go through that weighting, or the co-op's own objective
+    would quietly drift. The priority is card-local UI state, never persisted on the case —
+    what gets committed is the option, not the lens it was chosen through.
+  - The priority, and the `rankingScore` it produces, are part of the advisor payload and part
+    of the panel's staleness signature, for the same reason `riskAdjustedValue` is: the
+    assistant must rank by the objective the screen ranks by, or it manufactures a
+    disagreement. `rankingScore` appears nowhere in the UI, so the prompt forbids quoting it —
+    the first run without that line had the assistant telling the Manager about "a ranking
+    score of 82", a number they cannot see anywhere on the card.
+- **The packout comparison is the pivot of the operating flow.**
+  `lib/domain/packout.ts` compares one graded batch against the confirmed order it
+  was harvested for (batch → `harvestOrder.orderId` → order) and returns exactly one
+  of three verdicts: `shortage`, `match`, `surplus`. Everything downstream hangs off
+  it — a shortage goes back to the field, a surplus goes to the Decision Room, a match
+  goes out for delivery. It computes nothing new: every figure is read from the grading
+  result, the order and the allocations. Note that allocations *from the batch being
+  judged* are deliberately excluded from "already covered", or a batch would look like
+  it covered the order it is being measured against.
+- **A shortage sends work back to the field, it does not just raise a warning.**
+  `raiseCorrectiveHarvest` opens a fresh harvest order against the same order, the same
+  plot and the same team, targeting the shortfall plus the same 15% allowance Sales uses.
+  The reason lives in `PickingGuide.corrective` — **inside the guide on purpose**: `guide`
+  is a single JSONB column that passes through the mappers untouched, so this needed no
+  migration and works on databases that predate it (contrast the `farmers` incident under
+  "Config exists" below). `buildPickingGuide` must keep carrying `corrective` through, or
+  a spec revision will silently erase why the re-pick exists.
 - **Buyer rejections re-enter the loop.** `closeBatch` with `rejectedKg > 0` does not
   just store a number: it shrinks the shipped allocations by that amount so the stock is
   unallocated again, opens a decision case with `origin: "buyer_rejection"`, and leaves

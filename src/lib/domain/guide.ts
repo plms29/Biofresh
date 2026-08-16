@@ -1,16 +1,27 @@
-import { GRADE_LABEL, type BuyerSpec, type PickingGuide, type ProductKey } from "@/types";
+import {
+  GRADE_LABEL,
+  type BuyerSpec,
+  type CorrectiveHarvest,
+  type PickingGuide,
+  type ProductKey,
+} from "@/types";
 import { PRODUCTS } from "./catalog";
 
 /**
  * Turns the buyer specification into a short, visual picking guide.
  * This is the bridge that carries the buyer standard down to the field:
  * Sales enters the spec once, and the field always sees the latest summary.
+ *
+ * `corrective` is set only when the packhouse graded a batch short of the
+ * confirmed order and sent the work back. It is carried through every later
+ * rebuild of the guide so the field never loses the reason for the re-pick.
  */
 export function buildPickingGuide(
   product: ProductKey,
   spec: BuyerSpec,
   revision: number,
-  buyerName?: string
+  buyerName?: string,
+  corrective?: CorrectiveHarvest
 ): PickingGuide {
   const meta = PRODUCTS[product];
   const size =
@@ -47,14 +58,23 @@ export function buildPickingGuide(
     dontList.unshift(`Buyer rejects: ${spec.rejectNotes.trim()}`);
   }
 
+  if (corrective) {
+    doList.unshift(
+      `Make up the ${corrective.shortfallKg} kg batch ${corrective.batchId} was short of — ${GRADE_LABEL[spec.grade]} only, nothing borderline.`
+    );
+  }
+
+  const headline = `${meta.label} — ${GRADE_LABEL[spec.grade]}${
+    buyerName ? ` for ${buyerName}` : ""
+  }`;
+
   return {
-    headline: `${meta.label} — ${GRADE_LABEL[spec.grade]}${
-      buyerName ? ` for ${buyerName}` : ""
-    }`,
+    headline: corrective ? `Corrective pick: ${headline}` : headline,
     colorHint: color,
     sizeHint: size,
     doList,
     dontList,
     revision,
+    corrective,
   };
 }

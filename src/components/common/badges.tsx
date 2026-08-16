@@ -12,6 +12,10 @@ import {
   type OrderStatus,
   type Urgency,
 } from "@/types";
+import {
+  PACKOUT_VERDICT_LABEL,
+  type PackoutVerdict,
+} from "@/lib/domain/packout";
 import { cn } from "@/lib/utils";
 
 const base =
@@ -103,6 +107,27 @@ export function AllocationStatusTag({ status }: { status: AllocationStatus }) {
     shipped: "bg-leaf-600 text-white ring-leaf-700/30",
   };
   return <span className={cn(base, tone[status])}>{ALLOCATION_STATUS_LABEL[status]}</span>;
+}
+
+const PACKOUT_TONE: Record<PackoutVerdict, string> = {
+  shortage: "bg-risk-100 text-risk-700 ring-risk-300",
+  match: "bg-leaf-50 text-leaf-700 ring-leaf-200",
+  surplus: "bg-sun-100 text-sun-700 ring-sun-300",
+};
+
+/** How the actual packout landed against the confirmed order. */
+export function PackoutVerdictTag({
+  verdict,
+  className,
+}: {
+  verdict: PackoutVerdict;
+  className?: string;
+}) {
+  return (
+    <span className={cn(base, PACKOUT_TONE[verdict], className)}>
+      {PACKOUT_VERDICT_LABEL[verdict]}
+    </span>
+  );
 }
 
 export function ChannelTag({ source }: { source: OrderChannel }) {

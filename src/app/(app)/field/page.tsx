@@ -7,6 +7,7 @@ import {
   Check,
   CircleDot,
   Minus,
+  PackageX,
   RefreshCw,
   Smartphone,
   Sprout,
@@ -132,6 +133,20 @@ export default function FieldPage() {
                 </CardHeader>
 
                 <CardContent className="flex flex-col gap-4">
+                  {/* Raised by the packhouse because a graded batch fell short
+                      of this order — the field sees why, not just a new job. */}
+                  {ho.guide.corrective ? (
+                    <div className="flex items-start gap-2 rounded-xl bg-risk-100/70 px-3.5 py-2.5 text-sm text-risk-700 ring-1 ring-risk-300/60">
+                      <PackageX className="mt-0.5 size-4 shrink-0" />
+                      <span>
+                        Corrective pick. Batch {ho.guide.corrective.batchId}{" "}
+                        graded {kg(ho.guide.corrective.shortfallKg)} short of
+                        this order, so it has come back to the field. Target{" "}
+                        {kg(ho.targetKg)}.
+                      </span>
+                    </div>
+                  ) : null}
+
                   {ho.guide.revision > 0 ? (
                     <div className="flex items-start gap-2 rounded-xl bg-sun-100 px-3.5 py-2.5 text-sm text-sun-700">
                       <RefreshCw className="mt-0.5 size-4 shrink-0" />

@@ -42,6 +42,8 @@ interface AdvisorRequest {
   urgency: string;
   hoursToDeadline: number;
   origin: string;
+  managerPriority: string;
+  rankingBasis: string;
   ruleRecommendedOptionId: string;
   options: {
     id: string;
@@ -55,6 +57,16 @@ interface AdvisorRequest {
     risk: string;
     certainty: number;
     basis: string;
+    criteria: {
+      profit: string;
+      cashFlow: string;
+      risk: string;
+      feasibility: string;
+    };
+    workSteps: number;
+    staysSellableForDays: number;
+    feasibilityNote: string;
+    rankingScore: number | null;
   }[];
   openOrders: {
     id: string;
@@ -105,7 +117,20 @@ Hard rules:
   likely the option is to actually happen. "riskAdjustedValue" discounts it further for risk
   and for how long the money stays tied up — this is the figure the co-op ranks options by,
   and it is why the rule-based pick is what it is.
-- Rank by riskAdjustedValue. If you would pick a different option from the rule-based one, you
+- The manager weighs every option on four criteria, and the card shows all four side by side:
+  profit, cash flow, risk and feasibility. Feasibility is whether the co-op can actually run
+  the option with the hands and kit it has — "workSteps" is how many handling steps have to be
+  recorded, "staysSellableForDays" is how long the produce can still wait afterwards. Speak to
+  these four in your answer; they are what the manager is comparing.
+- "managerPriority" is what the manager has told the screen to rank by, and "rankingBasis" says
+  how that is worked out. Rank by that same basis. When a priority other than Balanced is set,
+  "rankingScore" out of 100 is the figure the options are ordered by on the screen — use it,
+  not riskAdjustedValue. Under Balanced it is null and riskAdjustedValue is the ranking figure.
+  The manager has said which criterion matters most today: respect it rather than arguing for
+  the balanced pick, unless following it would miss the action deadline outright. "rankingScore"
+  is an internal ordering number and appears nowhere on the manager's screen — use it to rank,
+  never quote it back. Argue in the four criteria and the money instead.
+- Rank by the stated basis. If you would pick a different option from the rule-based one, you
   must have a reason beyond the arithmetic — a deadline the figures do not capture, an open
   order about to be missed, a signal that is about to expire. Say what that reason is. Do not
   disagree merely because another option has a higher netValue or expectedValue; the ranking

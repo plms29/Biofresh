@@ -24,6 +24,7 @@ import {
 import { QrCode } from "@/components/common/qr-code";
 import { ProductLabel } from "@/components/common/product-mark";
 import { ProtocolTracker } from "@/components/packhouse/protocol-tracker";
+import { PackoutPanel } from "@/components/packhouse/packout-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -171,6 +172,11 @@ export default function BatchDetailPage() {
                         </div>
                       );
                     })}
+                  </div>
+                  {/* How this packout landed against the order it was picked
+                      for — read-only here; the actions live at the packhouse. */}
+                  <div className="mt-3">
+                    <PackoutPanel batch={batch} actions={false} />
                   </div>
                   {batch.qc.notes ? (
                     <p className="mt-3 text-sm text-muted-foreground">

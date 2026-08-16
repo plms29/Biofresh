@@ -44,6 +44,21 @@ PLANNED → HARVESTING → RECEIVED → GRADED
 A source batch splits into **sub-lots by grade** (Grade A / Grade B / Processing /
 Reject) the moment the packhouse confirms the grading result.
 
+### Packout against the confirmed order
+
+As soon as a batch is graded, the system compares the **actual packout** with the
+order it was harvested for and lands on one of three verdicts:
+
+- **Shortage** — the batch cannot supply the required grade in full. The packhouse
+  sends it straight back to the field as a **corrective harvest order** against the
+  same order, plot and team, targeting the shortfall.
+- **Match** — quantity and grade are covered. The batch is allocated and delivered.
+- **Surplus** — extra fruit, other grades, or fruit the order cannot take. It goes to
+  the Decision Room before its action deadline.
+
+After delivery the buyer inspects the batch. Anything they reject re-enters the same
+loop as a second surplus, as a decision case rather than a write-off.
+
 ## BioFresh Field Protocol — six mandatory steps
 
 `Sorting → Solution prep → Dip/Spray → Drying → Packing → Data sync`

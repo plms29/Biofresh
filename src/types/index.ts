@@ -243,6 +243,25 @@ export const HARVEST_STATUS_LABEL: Record<HarvestOrderStatus, string> = {
   done: "Finished",
 };
 
+/**
+ * Why a harvest order exists as a second pick against an order that already
+ * has a batch: the packhouse graded that batch and it came up short of the
+ * confirmed order, so the work goes straight back to the field.
+ *
+ * This lives inside `PickingGuide` rather than on `HarvestOrder` on purpose.
+ * The guide is stored as a single JSONB column and passes through the mappers
+ * untouched, so recording the reason here needs no migration and works on
+ * databases that predate the feature. It is also genuinely picking guidance:
+ * the field team needs to know they are making up a specific shortfall.
+ */
+export interface CorrectiveHarvest {
+  /** The batch whose grading result fell short. */
+  batchId: string;
+  /** Kilograms of the required grade the batch was missing. */
+  shortfallKg: number;
+  raisedAt: string;
+}
+
 /** Short, visual picking guide generated from the buyer specification. */
 export interface PickingGuide {
   headline: string;
@@ -252,6 +271,8 @@ export interface PickingGuide {
   dontList: string[];
   /** Increments each time Sales edits the spec, so the field sees an "updated" flag. */
   revision: number;
+  /** Set only on a re-pick raised to cover a shortage found at the packhouse. */
+  corrective?: CorrectiveHarvest;
 }
 
 export interface HarvestIncident {
@@ -440,7 +461,54 @@ export interface DecisionOption {
    */
   certainty: number;
   certaintyNote: string;
+  /**
+   * Extra handling the co-op has to do itself before this option pays: steps a
+   * person records, not money. 0 means the lot leaves exactly as it stands.
+   * Together with `shelfDaysAfter` this is what the feasibility criterion reads.
+   *
+   * Optional because decision cases stored before the four criteria shipped
+   * carry options without it — `feasibilityProfile` in
+   * `lib/domain/decisions.ts` fills a per-kind default rather than rendering a
+   * blank cell.
+   */
+  workSteps?: number;
+  /**
+   * How many days the produce stays sellable once the action is done. 0 means
+   * the option commits the lot now; dried stock keeps for months.
+   */
+  shelfDaysAfter?: number;
+  /** Plain reason behind those two figures, shown under Explain. */
+  feasibilityNote?: string;
 }
+
+/**
+ * The four things a Manager weighs one option by, straight off the operations
+ * diagram. Every one is read from figures the option already carries — none of
+ * them introduces a new business number.
+ */
+export type CriterionKey = "profit" | "cash" | "risk" | "feasibility";
+
+export const CRITERION_LABEL: Record<CriterionKey, string> = {
+  profit: "Profit",
+  cash: "Cash flow",
+  risk: "Risk",
+  feasibility: "Feasibility",
+};
+
+/**
+ * Which criterion the Manager is ranking by right now. `balanced` is the
+ * co-op's own objective (`riskAdjustedValue`); the others tilt the ranking
+ * towards one criterion without ever hiding the other three.
+ */
+export type DecisionPriority = "balanced" | CriterionKey;
+
+export const PRIORITY_LABEL: Record<DecisionPriority, string> = {
+  balanced: "Balanced",
+  profit: "Profit first",
+  cash: "Cash first",
+  risk: "Safety first",
+  feasibility: "Feasibility first",
+};
 
 export interface DecisionTask {
   id: string;

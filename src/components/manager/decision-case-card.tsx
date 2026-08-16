@@ -5,16 +5,21 @@ import Link from "next/link";
 import { CheckCircle2, ChevronDown, Info, Sparkles } from "lucide-react";
 import {
   CASE_ORIGIN_LABEL,
+  PRIORITY_LABEL,
   ROLE_META,
+  type CriterionKey,
   type DecisionCase,
   type DecisionOption,
+  type DecisionPriority,
 } from "@/types";
 import {
-  expectedValue,
   explainOption,
+  optionCriteria,
+  rankOptions,
   recommendedOption,
+  type OptionCriterion,
 } from "@/lib/domain/decisions";
-import { kg, untilText, vnd, vndShort } from "@/lib/domain/format";
+import { kg, untilText, vnd } from "@/lib/domain/format";
 import { useBio } from "@/store/use-biofresh";
 import { GradeTag, UrgencyTag } from "@/components/common/badges";
 import { ProductLabel } from "@/components/common/product-mark";
@@ -37,9 +42,21 @@ export function DecisionCaseCard({
   const { toast } = useToast();
 
   const batch = batches.find((b) => b.id === kase.batchId);
-  const recommended = recommendedOption(kase.options);
+  const [priority, setPriority] = React.useState<DecisionPriority>("balanced");
+  const recommended = recommendedOption(kase.options, priority);
+  const ranked = rankOptions(kase.options, priority);
   const [selectedId, setSelectedId] = React.useState(recommended.id);
   const [explainId, setExplainId] = React.useState<string | null>(null);
+
+  /**
+   * Changing the priority is a statement about what the Manager is optimising
+   * for, so the selection follows the new recommendation rather than leaving a
+   * stale pick highlighted under a different objective.
+   */
+  const changePriority = (next: DecisionPriority) => {
+    setPriority(next);
+    setSelectedId(recommendedOption(kase.options, next).id);
+  };
 
   const chosen = kase.chosenOptionId
     ? kase.options.find((o) => o.id === kase.chosenOptionId)
@@ -57,7 +74,10 @@ export function DecisionCaseCard({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <CardTitle className="flex flex-wrap items-center gap-2">
-              <Link href={`/batches/${kase.batchId}`} className="hover:underline">
+              <Link
+                href={`/batches/${kase.batchId}`}
+                className="hover:underline"
+              >
                 {kase.batchId}
               </Link>
               <GradeTag grade={kase.grade} />
@@ -95,7 +115,8 @@ export function DecisionCaseCard({
                     : "text-muted-foreground"
                 )}
               >
-                action deadline · {now ? untilText(kase.actionDeadline, now) : "—"}
+                action deadline ·{" "}
+                {now ? untilText(kase.actionDeadline, now) : "—"}
               </p>
             )}
           </div>
@@ -126,7 +147,11 @@ export function DecisionCaseCard({
                         onChange={() => toggleTask(kase.id, t.id)}
                         className="mt-0.5 size-4 accent-leaf-600"
                       />
-                      <span className={t.done ? "text-muted-foreground line-through" : ""}>
+                      <span
+                        className={
+                          t.done ? "text-muted-foreground line-through" : ""
+                        }
+                      >
                         {t.label}
                         <span className="ml-1.5 text-xs text-muted-foreground">
                           · {ROLE_META[t.owner].short}
@@ -140,11 +165,15 @@ export function DecisionCaseCard({
           </div>
         ) : (
           <>
+            <PriorityBar priority={priority} onChange={changePriority} />
+
             <div className="flex flex-col gap-2">
-              {kase.options.map((o) => (
+              {ranked.map((o) => (
                 <OptionRow
                   key={o.id}
                   option={o}
+                  criteria={optionCriteria(o, kase.options)}
+                  highlight={priority === "balanced" ? undefined : priority}
                   selected={selectedId === o.id}
                   recommended={recommended.id === o.id}
                   onSelect={() => setSelectedId(o.id)}
@@ -152,12 +181,22 @@ export function DecisionCaseCard({
                     setExplainId((prev) => (prev === o.id ? null : o.id))
                   }
                   explaining={explainId === o.id}
-                  explanation={explainOption(o, kase.options, lotForExplain)}
+                  explanation={explainOption(
+                    o,
+                    kase.options,
+                    lotForExplain,
+                    priority
+                  )}
                 />
               ))}
             </div>
 
-            <AdvisorPanel kase={kase} now={now} onFollow={setSelectedId} />
+            <AdvisorPanel
+              kase={kase}
+              now={now}
+              priority={priority}
+              onFollow={setSelectedId}
+            />
 
             <div className="flex flex-wrap items-center gap-2">
               <Button
@@ -173,9 +212,9 @@ export function DecisionCaseCard({
                 Confirm selected option
               </Button>
               <p className="text-xs text-muted-foreground">
-                Every figure comes from orders, market signals entered by Sales and
-                the internal reference price. The assistant reads those figures; it
-                does not produce them.
+                Every figure comes from orders, market signals entered by Sales
+                and the internal reference price. The assistant reads those
+                figures; it does not produce them.
               </p>
             </div>
           </>
@@ -185,8 +224,95 @@ export function DecisionCaseCard({
   );
 }
 
+const PRIORITIES: DecisionPriority[] = [
+  "balanced",
+  "profit",
+  "cash",
+  "risk",
+  "feasibility",
+];
+
+/**
+ * What the Manager is optimising for. The four criteria are always all visible;
+ * this only changes which one leads the ranking, so nothing is ever hidden by
+ * the choice.
+ */
+function PriorityBar({
+  priority,
+  onChange,
+}: {
+  priority: DecisionPriority;
+  onChange: (next: DecisionPriority) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+          Rank by
+        </span>
+        <div className="flex flex-wrap gap-1.5">
+          {PRIORITIES.map((p) => (
+            <button
+              key={p}
+              onClick={() => onChange(p)}
+              aria-pressed={priority === p}
+              className={cn(
+                "min-h-11 rounded-lg px-3 text-sm font-medium ring-1 transition-colors sm:min-h-9",
+                priority === p
+                  ? "bg-leaf-600 text-white ring-leaf-600"
+                  : "bg-card text-foreground ring-foreground/15 hover:bg-muted"
+              )}
+            >
+              {PRIORITY_LABEL[p]}
+            </button>
+          ))}
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {priority === "balanced"
+          ? "Balanced weighs value against risk and how long the cash stays tied up. All four criteria are shown on every option."
+          : `${PRIORITY_LABEL[priority]} gives that criterion most of the weight — the other three still count, so the top option is not always the single best cell.`}
+      </p>
+    </div>
+  );
+}
+
+const CRITERION_TONE = {
+  good: "text-leaf-700",
+  watch: "text-sun-700",
+  poor: "text-risk-700",
+} as const;
+
+/** One of the four criteria cells under an option. */
+function CriterionCell({
+  criterion,
+  leading,
+}: {
+  criterion: OptionCriterion;
+  leading: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-lg px-2.5 py-2 ring-1",
+        leading ? "bg-leaf-50 ring-leaf-300" : "bg-muted/40 ring-transparent"
+      )}
+    >
+      <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+        {criterion.label}
+      </p>
+      <p className="tnum mt-0.5 text-sm font-semibold">{criterion.value}</p>
+      <p className={cn("text-xs", CRITERION_TONE[criterion.tone])}>
+        {criterion.tierLabel}
+      </p>
+    </div>
+  );
+}
+
 function OptionRow({
   option,
+  criteria,
+  highlight,
   selected,
   recommended,
   onSelect,
@@ -195,6 +321,9 @@ function OptionRow({
   explanation,
 }: {
   option: DecisionOption;
+  criteria: Record<CriterionKey, OptionCriterion>;
+  /** The criterion currently leading the ranking, if any. */
+  highlight: CriterionKey | undefined;
   selected: boolean;
   recommended: boolean;
   onSelect: () => void;
@@ -242,26 +371,32 @@ function OptionRow({
             {option.detail}
           </span>
         </span>
-        <span className="shrink-0 text-right">
-          <span className="tnum block font-heading text-base font-semibold">
-            {vndShort(expectedValue(option))}
-          </span>
-          <span className="tnum block text-xs text-muted-foreground">
-            expected · net {vndShort(option.netValue)}
-          </span>
-          <span className="tnum block text-xs text-muted-foreground">
-            +{vndShort(option.extraCost)} cost
-          </span>
-          <span className="tnum block text-xs text-muted-foreground">
-            {option.cashInDays} days to cash
-          </span>
-        </span>
       </button>
 
+      {/* The four criteria sit outside the button: a button may only contain
+          phrasing content, and this is a grid of blocks. It is the largest
+          target on the row, so it selects the option too — the button above
+          stays the keyboard-reachable control for the same action. */}
+      <div
+        onClick={onSelect}
+        className="grid cursor-pointer grid-cols-2 gap-1.5 px-4 pb-3 sm:grid-cols-4"
+      >
+        {(["profit", "cash", "risk", "feasibility"] as CriterionKey[]).map(
+          (key) => (
+            <CriterionCell
+              key={key}
+              criterion={criteria[key]}
+              leading={highlight === key}
+            />
+          )
+        )}
+      </div>
+
       <div className="flex items-center justify-between gap-2 border-t border-border/70 px-4 py-2">
+        {/* Confidence now reads off the Risk cell above, so this line carries
+            only what the figures were built from. */}
         <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-          Confidence {Math.round(option.certainty * 100)}% · Source:{" "}
-          {option.basis}
+          Source: {option.basis}
         </p>
         <Button size="xs" variant="ghost" onClick={onExplain}>
           <Info className="size-3" /> Explain

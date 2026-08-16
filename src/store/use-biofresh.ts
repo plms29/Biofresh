@@ -30,6 +30,11 @@ import { PRODUCTS } from "@/lib/domain/catalog";
 import { buildPickingGuide } from "@/lib/domain/guide";
 import { emptyProtocol, isProtocolComplete } from "@/lib/domain/protocol";
 import { batchLots } from "@/lib/domain/inventory";
+import {
+  comparePackout,
+  correctiveTargetKg,
+  openCorrectiveHarvest,
+} from "@/lib/domain/packout";
 import { buildDecisionCase, tasksForOption } from "@/lib/domain/decisions";
 import { backfillRoster } from "@/lib/domain/picking";
 import * as M from "@/lib/supabase/mappers";
@@ -103,6 +108,15 @@ interface Actions {
   }) => { ok: boolean; message: string };
   removeAllocation: (allocationId: string) => void;
   confirmAllocation: (allocationId: string) => void;
+
+  /**
+   * Raises a second pick against the order a short batch was harvested for.
+   * Returns the new harvest order id, or an empty id with the reason it
+   * could not be raised.
+   */
+  raiseCorrectiveHarvest: (
+    batchId: string
+  ) => { ok: boolean; message: string; harvestOrderId?: string };
 
   // Field
   startHarvest: (harvestOrderId: string) => void;
@@ -410,7 +424,9 @@ export const useBio = create<BioStore>()(
                       h.product,
                       spec,
                       revision,
-                      order.buyerName
+                      order.buyerName,
+                      // A re-pick keeps its reason across every spec revision.
+                      h.guide.corrective
                     ),
                   }
                 : h
@@ -507,6 +523,79 @@ export const useBio = create<BioStore>()(
             ),
           }));
           log(set, get().role, `Allocation ${allocationId} confirmed for sale.`);
+        },
+
+        /**
+         * The packhouse graded a batch below what its confirmed order needs.
+         * Rather than let the shortage sit as a warning, the work goes back to
+         * the field as a fresh harvest order against the same order and the
+         * same team, carrying the reason it was raised.
+         */
+        raiseCorrectiveHarvest: (batchId) => {
+          const state = get();
+          const batch = state.batches.find((b) => b.id === batchId);
+          if (!batch) return { ok: false, message: "Batch not found." };
+
+          const existing = openCorrectiveHarvest(batchId, state.harvestOrders);
+          if (existing)
+            return {
+              ok: false,
+              message: `Corrective harvest order ${existing.id} is already open for this batch.`,
+            };
+
+          const comparison = comparePackout({
+            batch,
+            orders: state.orders,
+            harvestOrders: state.harvestOrders,
+            allocations: state.allocations,
+          });
+          if (!comparison || comparison.verdict !== "shortage")
+            return {
+              ok: false,
+              message:
+                "This batch is not short of its confirmed order, so there is nothing to re-pick.",
+            };
+
+          const { order, shortfallKg } = comparison;
+          const source = state.harvestOrders.find(
+            (h) => h.id === batch.harvestOrderId
+          );
+          const id = `LTH-${503 + state.harvestOrders.length}`;
+          const ho: HarvestOrder = {
+            id,
+            product: batch.product,
+            targetKg: correctiveTargetKg(shortfallKg),
+            farm: source?.farm ?? batch.origin,
+            deadline: order.dueDate,
+            orderId: order.id,
+            guide: buildPickingGuide(
+              batch.product,
+              order.spec,
+              order.specRevisions,
+              order.buyerName,
+              { batchId, shortfallKg, raisedAt: nowIso() }
+            ),
+            status: "pending",
+            pickedKg: 0,
+            // Same team as the original pick — they know the plot and the spec.
+            assignedFarmerIds: source?.assignedFarmerIds ?? [],
+            incidents: [],
+            createdAt: nowIso(),
+          };
+
+          set((s) => ({ harvestOrders: [ho, ...s.harvestOrders] }));
+          log(
+            set,
+            get().role,
+            `Batch ${batchId} graded ${shortfallKg} kg short of order ${order.id} — corrective harvest order ${id} sent back to the field.`
+          );
+          return {
+            ok: true,
+            message: `Corrective harvest order ${id} raised for ${correctiveTargetKg(
+              shortfallKg
+            )} kg.`,
+            harvestOrderId: id,
+          };
         },
 
         // ---------------- Field ----------------

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Bot, Loader2, TriangleAlert } from "lucide-react";
-import type { AdvisorVerdict, DecisionCase } from "@/types";
+import type { AdvisorVerdict, DecisionCase, DecisionPriority } from "@/types";
 import { useBio } from "@/store/use-biofresh";
 import { askAdvisor, buildAdvisorRequest } from "@/lib/domain/advisor";
 import { recommendedOption } from "@/lib/domain/decisions";
@@ -20,10 +20,13 @@ import { cn } from "@/lib/utils";
 export function AdvisorPanel({
   kase,
   now,
+  priority,
   onFollow,
 }: {
   kase: DecisionCase;
   now: number;
+  /** What the Manager is ranking by — the assistant is shown the same objective. */
+  priority: DecisionPriority;
   onFollow: (optionId: string) => void;
 }) {
   const batches = useBio((s) => s.batches);
@@ -37,7 +40,7 @@ export function AdvisorPanel({
   /** The options the current verdict was written about. */
   const [answeredFor, setAnsweredFor] = React.useState<string | null>(null);
 
-  const rulePick = recommendedOption(kase.options);
+  const rulePick = recommendedOption(kase.options, priority);
 
   /**
    * The options change as stock is allocated and signals expire. Prose written
@@ -47,10 +50,16 @@ export function AdvisorPanel({
    */
   const signature = React.useMemo(
     () =>
-      kase.options
-        .map((o) => `${o.id}:${Math.round(o.netValue)}:${Math.round(o.extraCost)}:${o.certainty}`)
-        .join("|"),
-    [kase.options]
+      [
+        // The priority is part of the question, not just the figures: an answer
+        // written under "cash first" does not stand under "profit first".
+        priority,
+        ...kase.options.map(
+          (o) =>
+            `${o.id}:${Math.round(o.netValue)}:${Math.round(o.extraCost)}:${o.certainty}`
+        ),
+      ].join("|"),
+    [kase.options, priority]
   );
   const stale = verdict !== null && answeredFor !== null && answeredFor !== signature;
 
@@ -77,6 +86,7 @@ export function AdvisorPanel({
       signals,
       batches,
       allocations,
+      priority,
       now,
     });
     const res = await askAdvisor(payload, controller.signal);
@@ -131,8 +141,8 @@ export function AdvisorPanel({
         <p className="mt-2 flex items-start gap-2 text-sm text-sun-700">
           <TriangleAlert className="mt-0.5 size-4 shrink-0" />
           <span>
-            The figures have changed since this answer was written. Ask again for
-            an opinion on the options as they stand now.
+            The figures or the priority have changed since this answer was
+            written. Ask again for an opinion on the options as they stand now.
           </span>
         </p>
       ) : null}

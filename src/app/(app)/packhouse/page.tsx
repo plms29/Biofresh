@@ -28,6 +28,7 @@ import { Segmented } from "@/components/ui/segmented";
 import { Meter } from "@/components/ui/meter";
 import { QcModal } from "@/components/packhouse/qc-modal";
 import { ProtocolTracker } from "@/components/packhouse/protocol-tracker";
+import { PackoutPanel } from "@/components/packhouse/packout-panel";
 import { useToast } from "@/components/ui/toast";
 
 const GRADES: Grade[] = ["A", "B", "PROCESS", "REJECT"];
@@ -236,6 +237,10 @@ export default function PackhousePage() {
                         );
                       })}
                     </div>
+
+                    {/* Node 9 of the operating flow: actual packout vs the
+                        confirmed order, and where it goes next. */}
+                    <PackoutPanel batch={b} />
 
                     {lots.some(
                       (l) => l.grade !== "REJECT" && l.availableKg > 0
